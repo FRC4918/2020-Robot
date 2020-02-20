@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# FRC team 4918 extra files
+Makefile
+sftpbatchfile
+frcUserProgram
+*.cpp~
