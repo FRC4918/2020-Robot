@@ -61,8 +61,8 @@ class Robot : public frc::TimedRobot {
    WPI_VictorSPX m_motorFlippyFlippy{ 9 }; //  motor to spin the color wheel 
    frc::Compressor m_compressor{      0 }; // compressor
 
-   frc::Solenoid m_shiftingSolenoid{  7};
-   frc::Solenoid m_flipperSolenoid{   6};
+   frc::Solenoid m_shiftingSolenoid{ 0, 7};
+   frc::DoubleSolenoid m_flipperSolenoid{ 0, 1};
 
    
 
@@ -510,10 +510,10 @@ class Robot : public frc::TimedRobot {
       double rightMotorOutput = 0.0;
       // m_drive.StopMotor();
 #ifndef JAG_NOTDEFINED
-      if ( ( -0.10 < desiredForward ) && ( desiredForward < 0.10 ) ) {
+      if ( ( -0.30 < desiredForward ) && ( desiredForward < 0.30 ) ) {
          desiredForward = 0.0;
       }
-      if ( ( -0.10 < desiredTurn ) && ( desiredTurn < 0.10 ) ) {
+      if ( ( -0.20 < desiredTurn ) && ( desiredTurn < 0.20 ) ) {
          desiredTurn = 0.0;
       }
       leftMotorOutput  = -desiredForward - desiredTurn;
@@ -544,14 +544,16 @@ leftMotorOutput = 0.0;
          }
       }
 #endif
-     // m_motorLSMaster.Set( ControlMode::Velocity, 
-                          // leftMotorOutput  * 500.0 * 4096 / 600 );
-      //m_motorRSMaster.Set( ControlMode::Velocity, 
-                           //rightMotorOutput * 500.0 * 4096 / 600 );
-      m_motorLSMaster.Set( ControlMode::PercentOutput, 
-                           leftMotorOutput  * 500.0 * 4096 / 600 / 1024);
-      m_motorRSMaster.Set( ControlMode::PercentOutput, 
-                           rightMotorOutput * 500.0 * 4096 / 600 / 1024);
+      m_motorLSMaster.Set( ControlMode::Velocity, 
+                          leftMotorOutput  * 5400.0 * 4096 / 600 );
+      m_motorRSMaster.Set( ControlMode::Velocity, 
+                           rightMotorOutput * 5400.0 * 4096 / 600 );
+      LSMotorState.targetVelocity_UnitsPer100ms = leftMotorOutput  * 5400.0 * 4096 / 600 ;
+      RSMotorState.targetVelocity_UnitsPer100ms = rightMotorOutput * 5400.0 * 4096 / 600 ;
+      //m_motorLSMaster.Set( ControlMode::PercentOutput, 
+                           //leftMotorOutput  * 500.0 * 4096 / 600 / 1024);
+      //m_motorRSMaster.Set( ControlMode::PercentOutput, 
+                           //rightMotorOutput * 500.0 * 4096 / 600 / 1024);
    }      // Team4918Drive()
 
 
@@ -726,11 +728,11 @@ leftMotorOutput = 0.0;
       static int iCallCount = 0;
       iCallCount++;
 
-      // m_shiftingSolenoid.Set(true);     // ??? gear
-      m_shiftingSolenoid.Set(false);    // ??? gear
+      //m_shiftingSolenoid.Set(true);     // high gear?
+      m_shiftingSolenoid.Set(false);    // low gear?
 
                   /* If joystick button 5 pressed, use the joystick position */
-                  /* to adjust some variables to specific speeds, so we can  */
+                  /* to49184918 adjust some variables to specific speeds, so we can  */
                   /* set the drive motors to those speeds in later code.     */
       if ( ( 0 == iCallCount%100 )  &&
            sCurrState.joyButton[5]     ) {
@@ -1202,9 +1204,9 @@ leftMotorOutput = 0.0;
       }
       if ( sCurrState.conButton[11] ) {             // Is manual mode selected?
          if ( sCurrState.conButton[2] )   {            // Run conveyor forward.
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.2 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.6 );
          } else if ( sCurrState.conButton[4] ) {     // Run conveyor backwards.
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.2 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.6 );
          } else {                                         // Stop the conveyor.
                  // comment out for now, until we get a dedicated motor
                  // for this which doesn't compete with RunClimberPole().
@@ -1214,7 +1216,7 @@ leftMotorOutput = 0.0;
          if (  sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
             // for testing only, until we connect the real conveyor motors
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.2 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.6 );
          } else {
             m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
          } 
@@ -1231,11 +1233,19 @@ leftMotorOutput = 0.0;
       iCallCount++;
 
                                  // Console button 6 is the lowest-left button
-      if (sPrevState.conButton[6] && sCurrState.conButton[6] ) {
-         m_flipperSolenoid.Set( bFlipperState );
-         bFlipperState = !bFlipperState;
+      if ( !sPrevState.conButton[6] && sCurrState.conButton[6] ) {
+         if ( bFlipperState ){
+            m_flipperSolenoid.Set( frc::DoubleSolenoid::Value::kForward);
+         } else {
+            m_flipperSolenoid.Set( frc::DoubleSolenoid::Value::kReverse);
+         }
+         bFlipperState = !bFlipperState; 
       }
-
+      if ( sCurrState.conButton[7]){
+         m_motorFlippyFlippy.Set(ControlMode::PercentOutput, 0.2);
+      } else {
+         m_motorFlippyFlippy.Set(ControlMode::PercentOutput, 0.0);
+      }
    }
 
       /*---------------------------------------------------------------------*/
@@ -1254,6 +1264,7 @@ leftMotorOutput = 0.0;
       } else if ( sCurrState.conButton[1] ){
          if ( !sPrevState.conButton[1] ) {         // if button 1 has just been
             limitSwitchHasBeenHit = false;         // pressed, reset to start
+            m_compressor.Stop();
          }
          if ( limitSwitchHasBeenHit ) {
                  // we are at the top; just supply a little power to stay there
@@ -1454,10 +1465,10 @@ leftMotorOutput = 0.0;
       if ( OK == m_motorLSMaster.ConfigSelectedFeedbackSensor(
                             FeedbackDevice::CTRE_MagEncoder_Relative, 0, 10 ) ) {
          m_motorLSMaster.SelectProfileSlot( 0, 0 );
-         m_motorLSMaster.Config_kF( 0, 0.15,   10 );   // these work well for
-         m_motorLSMaster.Config_kP( 0, 0.2,    10 );   // RPMs above ~200
-         m_motorLSMaster.Config_kI( 0, 0.0002, 10 );
-         m_motorLSMaster.Config_kD( 0, 10.0,   10 );
+         m_motorLSMaster.Config_kF( 0, 0.025,   10 );   // these work well for .15
+         m_motorLSMaster.Config_kP( 0, 0.02,    10 );   // RPMs above ~200 0.2
+         m_motorLSMaster.Config_kI( 0, 0.0, 10 );// 0.0002
+         m_motorLSMaster.Config_kD( 0, 0.0,   10 );
          cout << "LSMaster encoder is okay" << endl;
       } else {
          m_motorLSMaster.SelectProfileSlot( 0, 0 );
@@ -1472,10 +1483,10 @@ leftMotorOutput = 0.0;
       if ( OK == m_motorRSMaster.ConfigSelectedFeedbackSensor(
                           FeedbackDevice::CTRE_MagEncoder_Relative, 0, 10 ) ) {
          m_motorRSMaster.SelectProfileSlot( 0, 0 );
-         m_motorRSMaster.Config_kF( 0, 0.15,   10 );   // these work well for
-         m_motorRSMaster.Config_kP( 0, 0.2,    10 );   // RPMs above ~200
-         m_motorRSMaster.Config_kI( 0, 0.0002, 10 );
-         m_motorRSMaster.Config_kD( 0, 10.0,   10 );
+         m_motorRSMaster.Config_kF( 0, 0.025,   10 );   // these work well for .15
+         m_motorRSMaster.Config_kP( 0, 0.02,    10 );   // RPMs above ~200 0.2
+         m_motorRSMaster.Config_kI( 0, 0.0, 10 ); // 0.0002
+         m_motorRSMaster.Config_kD( 0, 0.0,   10 ); // 10.0
          cout << "RSMaster encoder is okay" << endl;
 
       } else {
@@ -1596,6 +1607,7 @@ leftMotorOutput = 0.0;
       /*---------------------------------------------------------------------*/
    void AutonomousInit() override {
       RobotInit();
+      m_compressor.Start();
       limenttable->PutNumber( "ledMode", 3 );                   // turn LEDs on
       cout << "shoot 3 balls" << endl;
       // m_drive.StopMotor();
@@ -1620,6 +1632,8 @@ leftMotorOutput = 0.0;
       GetAllVariables();
 
       iCallCount++;
+
+      m_motorIntake.Set(ControlMode::PercentOutput, -0.2);
 
       // m_drive.StopMotor();
       LSMotorState.targetVelocity_UnitsPer100ms = 0;        // Left Side drive
@@ -1686,6 +1700,7 @@ leftMotorOutput = 0.0;
       /*---------------------------------------------------------------------*/
    void TeleopInit() override {
       RobotInit();
+      m_compressor.Start();
                                                     // zero the drive encoders
       m_motorLSMaster.SetSelectedSensorPosition( 0, 0, 10 );
       m_motorRSMaster.SetSelectedSensorPosition( 0, 0, 10 );
@@ -1702,11 +1717,15 @@ leftMotorOutput = 0.0;
       GetAllVariables();  // this is necessary if we use any
                           // of the Canbus variables.
 
+      m_motorIntake.Set(ControlMode::PercentOutput, -0.2);
+
       RunDriveMotors();
 
       RunShooter();
 
       RunConveyor();
+
+      RunColorWheel();
 
       RunClimberPole();
       RunClimberWinch();
