@@ -45,13 +45,26 @@ class Robot : public frc::TimedRobot {
  private:
 
          // Note for future: Need to add a gyro here.
-   WPI_TalonSRX m_motorLSMaster{   0 };   // Left  side drive motor
-   WPI_TalonSRX m_motorRSMaster{   8 };   // Right side drive motor   
-   WPI_VictorSPX m_motorLSSlave1{ 14 };   // Left  side slave motor
-   WPI_VictorSPX m_motorRSSlave1{  1 };   // Right side slave motor
-   WPI_TalonSRX m_motorTopShooter{ 2 };   // top motor on shooter
-   WPI_TalonSRX m_motorBotShooter{ 9 };   // bottom motor on shooter
-   WPI_TalonSRX m_motorClimberPole{ 15 }; // telescoping pole motor
+   WPI_TalonSRX m_motorLSMaster{      0 };   // Left  side drive motor
+   WPI_TalonSRX m_motorRSMaster{     15 };   // Right side drive motor   
+   WPI_VictorSPX m_motorLSSlave1{     1 };   // Left  side slave motor
+   WPI_VictorSPX m_motorLSSlave2{     2 };   // Left side slave motor
+   WPI_VictorSPX m_motorRSSlave1{    14 };   // Right side slave motor
+   WPI_VictorSPX m_motorRSSlave2{    13 };   // Right side slave motor
+   WPI_TalonSRX m_motorTopShooter{    3 };   // top motor on shooter
+   WPI_TalonSRX m_motorBotShooter{   12 };  // bottom motor on shooter
+   WPI_TalonSRX m_motorClimberPole{   4 };  // telescoping pole motor
+   WPI_VictorSPX m_motorConveyMaster{ 5 };  // conveyor motor 1
+   WPI_VictorSPX m_motorConveySlave{ 10 };  // conveyor motor 2
+   WPI_TalonSRX m_motorWinch{        11 };  // winch motor
+   WPI_VictorSPX m_motorIntake{       6 };  // intake motor
+   WPI_VictorSPX m_motorFlippyFlippy{ 9 }; //  motor to spin the color wheel 
+   frc::Compressor m_compressor{      0 }; // compressor
+
+   frc::Solenoid m_shiftingSolenoid{  7};
+   frc::Solenoid m_flipperSolenoid{   6};
+
+   
 
    PigeonIMU    pigeonIMU{ 1 };
 
@@ -373,6 +386,8 @@ class Robot : public frc::TimedRobot {
 
                                 // use frc::Timer::GetFPGATimestamp() instead?
       dTimeOfLastCall = frc::GetTime();
+//      cout << std::setw( 20 ) << std::setprecision( 16 ) << dTimeOfLastCall << " ";
+
 
       sPrevState = sCurrState;                  // save all previous variables
 
@@ -529,10 +544,14 @@ leftMotorOutput = 0.0;
          }
       }
 #endif
-      m_motorLSMaster.Set( ControlMode::Velocity, 
-                           leftMotorOutput  * 500.0 * 4096 / 600 );
-      m_motorRSMaster.Set( ControlMode::Velocity, 
-                           rightMotorOutput * 500.0 * 4096 / 600 );
+     // m_motorLSMaster.Set( ControlMode::Velocity, 
+                          // leftMotorOutput  * 500.0 * 4096 / 600 );
+      //m_motorRSMaster.Set( ControlMode::Velocity, 
+                           //rightMotorOutput * 500.0 * 4096 / 600 );
+      m_motorLSMaster.Set( ControlMode::PercentOutput, 
+                           leftMotorOutput  * 500.0 * 4096 / 600 / 1024);
+      m_motorRSMaster.Set( ControlMode::PercentOutput, 
+                           rightMotorOutput * 500.0 * 4096 / 600 / 1024);
    }      // Team4918Drive()
 
 
@@ -706,6 +725,9 @@ leftMotorOutput = 0.0;
    bool RunDriveMotors( void ) {
       static int iCallCount = 0;
       iCallCount++;
+
+      // m_shiftingSolenoid.Set(true);     // ??? gear
+      m_shiftingSolenoid.Set(false);    // ??? gear
 
                   /* If joystick button 5 pressed, use the joystick position */
                   /* to adjust some variables to specific speeds, so we can  */
@@ -1180,25 +1202,41 @@ leftMotorOutput = 0.0;
       }
       if ( sCurrState.conButton[11] ) {             // Is manual mode selected?
          if ( sCurrState.conButton[2] )   {            // Run conveyor forward.
-            m_motorClimberPole.Set( ControlMode::PercentOutput, 0.2 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.2 );
          } else if ( sCurrState.conButton[4] ) {     // Run conveyor backwards.
-            m_motorClimberPole.Set( ControlMode::PercentOutput, -0.2 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.2 );
          } else {                                         // Stop the conveyor.
                  // comment out for now, until we get a dedicated motor
                  // for this which doesn't compete with RunClimberPole().
-            // m_motorClimberPole.Set( ControlMode::PercentOutput, 0.0);
+           m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0);
          } 
       } else {  
          if (  sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
             // for testing only, until we connect the real conveyor motors
-            m_motorClimberPole.Set( ControlMode::PercentOutput, 0.2 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.2 );
          } else {
-            m_motorClimberPole.Set( ControlMode::PercentOutput, 0.0 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
          } 
       }
    }   // RunConveyor()
 
+      /*---------------------------------------------------------------------*/
+      /* RunColorWheel()                                                     */
+      /* Extend or retract the color wheel flipper.                          */
+      /*---------------------------------------------------------------------*/
+   void RunColorWheel( void ) {
+      static int iCallCount = 0;
+      static bool bFlipperState = false;
+      iCallCount++;
+
+                                 // Console button 6 is the lowest-left button
+      if (sPrevState.conButton[6] && sCurrState.conButton[6] ) {
+         m_flipperSolenoid.Set( bFlipperState );
+         bFlipperState = !bFlipperState;
+      }
+
+   }
 
       /*---------------------------------------------------------------------*/
       /* RunClimberPole()                                                    */
@@ -1321,13 +1359,13 @@ leftMotorOutput = 0.0;
       m_motor.ConfigPeakOutputReverse(   -1, 10 );
 
             /* Set limits to how much current will be sent through the motor */
-      m_motor.ConfigPeakCurrentLimit(60);    // 60 works here for miniCIMs
+      m_motor.ConfigPeakCurrentLimit(10);    // 60 works here for miniCIMs
       m_motor.ConfigPeakCurrentDuration(1);  // 1000 milliseconds (for 60 Amps)
                                              // works fine here, with 40 for
                                              // ConfigContinuousCurrentLimit(),
                                              // but we can reduce to 10, 1, 10
                                              // for safety while debugging
-      m_motor.ConfigContinuousCurrentLimit(40);
+      m_motor.ConfigContinuousCurrentLimit(5);
       m_motor.EnableCurrentLimit(true);
 
                                           // Config 100% motor output to 12.0V
@@ -1384,7 +1422,10 @@ leftMotorOutput = 0.0;
       powercellOnVideo.TestMode = false;
 
       m_motorLSSlave1.Follow(m_motorLSMaster);
+      m_motorLSSlave2.Follow(m_motorLSMaster);
       m_motorRSSlave1.Follow(m_motorRSMaster);
+      m_motorRSSlave2.Follow(m_motorRSMaster);
+      m_motorConveySlave.Follow(m_motorConveyMaster);
 
       MotorInit( m_motorLSMaster );
       MotorInit( m_motorRSMaster );
@@ -1393,13 +1434,17 @@ leftMotorOutput = 0.0;
       MotorInit( m_motorClimberPole );
                                     // invert encoder value positive/negative
                                     // and motor direction, for some motors.
-      m_motorLSMaster.SetSensorPhase(true);
+      //    m_motorLSMaster.SetSensorPhase(true);
+      m_motorLSMaster.SetSensorPhase(false);
       // m_motorLSMaster.SetInverted(false);
-      m_motorRSMaster.SetSensorPhase(true);
+      //    m_motorRSMaster.SetSensorPhase(true);
+      m_motorRSMaster.SetSensorPhase(false);
       // m_motorRSMaster.SetInverted(false);
-      m_motorTopShooter.SetSensorPhase(false);
+      //    m_motorTopShooter.SetSensorPhase(false);
+      m_motorTopShooter.SetSensorPhase(true);
       // m_motorTopShooter.SetInverted(false);
-      m_motorBotShooter.SetSensorPhase(false);
+      //    m_motorBotShooter.SetSensorPhase(false);
+      m_motorBotShooter.SetSensorPhase(true);
       // m_motorBotShooter.SetInverted(false);
       m_motorClimberPole.SetSensorPhase(false);
       m_motorClimberPole.SetInverted(false);
@@ -1473,8 +1518,31 @@ leftMotorOutput = 0.0;
          m_motorBotShooter.Config_kI( 0, 0.0,  10 );
          m_motorBotShooter.Config_kD( 0, 0.0,  10 );
       }
+      m_shiftingSolenoid.Set(true);
       iCallCount++;
    }      // RobotInit()
+
+
+      /*---------------------------------------------------------------------*/
+      /* RobotPeriodic()                                                     */
+      /* This function is called every 20 milliseconds, regardless of what   */
+      /* mode the robot is in (Autonomous, Teleop, or Test mode).            */
+      /* If the robot is in one of those modes, this function is called      */
+      /* immediately *after* the call to AutonomousPeriodic(),               */
+      /* TeleopPeriodic(), or TestPeriodic().                                */
+      /* If not in one of those 3 modes, the Roborio cannot drive any        */
+      /* motors, but it can still check the joystick, joystick/console       */
+      /* buttons, and sensors.                                               */
+      /*---------------------------------------------------------------------*/
+   void RobotPeriodic() override {
+      static int iCallCount = 0;
+      iCallCount++;
+
+//      GetAllVariables();
+
+//      SwitchCameraIfNecessary();
+//      cout << "RobotPeriodic()" << endl;
+   }
 
 
       /*---------------------------------------------------------------------*/
@@ -1518,6 +1586,7 @@ leftMotorOutput = 0.0;
          cout << "Sonar0 distance: " << distSensor0.GetVoltage() * 100 / 2.54
               << " inches (" << distSensor0.GetVoltage() << ")." << endl; 
       }
+//      cout << "TestPeriodic()" << endl;
    }
 
 
@@ -1635,9 +1704,9 @@ leftMotorOutput = 0.0;
 
       RunDriveMotors();
 
-      // RunShooter();
+      RunShooter();
 
-      // RunConveyor();
+      RunConveyor();
 
       RunClimberPole();
       RunClimberWinch();
