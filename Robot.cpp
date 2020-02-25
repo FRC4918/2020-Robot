@@ -1154,26 +1154,26 @@ leftMotorOutput = 0.0;
 
             m_motorTopShooter.Set( ControlMode::Velocity,
                   m_motorTopShooter.GetSelectedSensorVelocity() +
-                     0.2 * ( TSMotorState.targetVelocity_UnitsPer100ms -
+                     0.05 * ( TSMotorState.targetVelocity_UnitsPer100ms -
                              m_motorTopShooter.GetSelectedSensorVelocity() ) );
             m_motorBotShooter.Set( ControlMode::Velocity,
                   m_motorBotShooter.GetSelectedSensorVelocity() +
-                     0.2 * ( BSMotorState.targetVelocity_UnitsPer100ms -
+                     0.05 * ( BSMotorState.targetVelocity_UnitsPer100ms -
                              m_motorBotShooter.GetSelectedSensorVelocity() ) );
          } else {
             m_motorTopShooter.Set( ControlMode::Velocity, 
-                                   TSMotorState.targetVelocity_UnitsPer100ms);
+                                   TSMotorState.targetVelocity_UnitsPer100ms );
             m_motorBotShooter.Set( ControlMode::Velocity, 
-                                   BSMotorState.targetVelocity_UnitsPer100ms);
+                                   BSMotorState.targetVelocity_UnitsPer100ms );
          }
          iButtonPressCallCount++;
          
       } else {
                                       // slow down slowly, over about 2 seconds
          m_motorTopShooter.Set( ControlMode::Velocity,
-                         0.8 * m_motorTopShooter.GetSelectedSensorVelocity() );
+                        0.99 * m_motorTopShooter.GetSelectedSensorVelocity() );
          m_motorBotShooter.Set(ControlMode::Velocity,
-                         0.8 * m_motorBotShooter.GetSelectedSensorVelocity() );
+                        0.99 * m_motorBotShooter.GetSelectedSensorVelocity() );
       }
       return true;
    }     // RunShooter()
@@ -1204,9 +1204,9 @@ leftMotorOutput = 0.0;
       }
       if ( sCurrState.conButton[11] ) {             // Is manual mode selected?
          if ( sCurrState.conButton[2] )   {            // Run conveyor forward.
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.6 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.8 );
          } else if ( sCurrState.conButton[4] ) {     // Run conveyor backwards.
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.6 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
          } else {                                         // Stop the conveyor.
                  // comment out for now, until we get a dedicated motor
                  // for this which doesn't compete with RunClimberPole().
@@ -1216,7 +1216,7 @@ leftMotorOutput = 0.0;
          if (  sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
             // for testing only, until we connect the real conveyor motors
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.6 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.8 );
          } else {
             m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
          } 
@@ -1332,6 +1332,8 @@ leftMotorOutput = 0.0;
       /*---------------------------------------------------------------------*/
    void MotorInit( WPI_TalonSRX & m_motor ) {
 
+      m_motor.ConfigFactoryDefault( 10 );
+
                 /* Configure Sensor Source for Primary PID */
           /* Config to stop motor immediately when limit switch is closed. */
                                                    // if encoder is connected
@@ -1370,13 +1372,13 @@ leftMotorOutput = 0.0;
       m_motor.ConfigPeakOutputReverse(   -1, 10 );
 
             /* Set limits to how much current will be sent through the motor */
-      m_motor.ConfigPeakCurrentLimit(10);    // 60 works here for miniCIMs
+      m_motor.ConfigPeakCurrentLimit(60);    // 60 works here for miniCIMs
       m_motor.ConfigPeakCurrentDuration(1);  // 1000 milliseconds (for 60 Amps)
                                              // works fine here, with 40 for
                                              // ConfigContinuousCurrentLimit(),
                                              // but we can reduce to 10, 1, 10
                                              // for safety while debugging
-      m_motor.ConfigContinuousCurrentLimit(5);
+      m_motor.ConfigContinuousCurrentLimit(40);
       m_motor.EnableCurrentLimit(true);
 
                                           // Config 100% motor output to 12.0V
@@ -1502,9 +1504,9 @@ leftMotorOutput = 0.0;
       if ( OK == m_motorTopShooter.ConfigSelectedFeedbackSensor(
                           FeedbackDevice::CTRE_MagEncoder_Relative, 0, 10 ) ) {
          m_motorTopShooter.SelectProfileSlot( 0, 0 );
-         m_motorTopShooter.Config_kF( 0, 0.01,    10 );
-         m_motorTopShooter.Config_kP( 0, 0.08,    10 );
-         m_motorTopShooter.Config_kI( 0, 0.00008, 10 );
+         m_motorTopShooter.Config_kF( 0, 0.02,    10 );
+         m_motorTopShooter.Config_kP( 0, 0.2,    10 ); // 0.08
+         m_motorTopShooter.Config_kI( 0, 0.0, 10 );     // was 0.00008
          m_motorTopShooter.Config_kD( 0, 0.8,     10 );
       } else {
          m_motorTopShooter.SelectProfileSlot( 0, 0 );
@@ -1518,9 +1520,9 @@ leftMotorOutput = 0.0;
       if ( OK == m_motorBotShooter.ConfigSelectedFeedbackSensor(
                           FeedbackDevice::CTRE_MagEncoder_Relative, 0, 10 ) ) {
          m_motorBotShooter.SelectProfileSlot( 0, 0 );
-         m_motorBotShooter.Config_kF( 0, 0.01,    10 );
-         m_motorBotShooter.Config_kP( 0, 0.08,    10 );
-         m_motorBotShooter.Config_kI( 0, 0.00008, 10 );
+         m_motorBotShooter.Config_kF( 0, 0.02,    10 );
+         m_motorBotShooter.Config_kP( 0, 0.2,    10 ); // 0.08
+         m_motorBotShooter.Config_kI( 0, 0.0, 10 );  // 0.00008
          m_motorBotShooter.Config_kD( 0, 0.8,    10 );
       } else {
          m_motorBotShooter.SelectProfileSlot( 0, 0 );
@@ -1633,7 +1635,13 @@ leftMotorOutput = 0.0;
 
       iCallCount++;
 
-      m_motorIntake.Set(ControlMode::PercentOutput, -0.2);
+      //m_motorIntake.Set(ControlMode::PercentOutput, -0.4);
+
+      if ( sCurrState.conButton[8] )   {            // Run intake forward.
+         m_motorIntake.Set( ControlMode::PercentOutput, -0.4 );
+      } else {                                         // Stop the intake.
+         m_motorIntake.Set( ControlMode::PercentOutput, 0.0 );
+      }
 
       // m_drive.StopMotor();
       LSMotorState.targetVelocity_UnitsPer100ms = 0;        // Left Side drive
@@ -1717,7 +1725,14 @@ leftMotorOutput = 0.0;
       GetAllVariables();  // this is necessary if we use any
                           // of the Canbus variables.
 
-      m_motorIntake.Set(ControlMode::PercentOutput, -0.2);
+      //m_motorIntake.Set(ControlMode::PercentOutput, -0.4);
+
+      if ( sCurrState.conButton[8] )   {            // Run intake forward.
+         m_motorIntake.Set( ControlMode::PercentOutput, -0.4 );
+      } else {                                         // Stop the intake.
+         m_motorIntake.Set( ControlMode::PercentOutput, 0.0 );
+      } 
+
 
       RunDriveMotors();
 
