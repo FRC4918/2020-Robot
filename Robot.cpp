@@ -38,7 +38,8 @@
 using std::cout;
 using std::endl;
 using std::setw;
-using std::setfill;              // so we can use "setfill('0') in cout streams
+using std::setfill; 
+using std::abs;             // so we can use "setfill('0') in cout streams
 using namespace cv;
 
 class Robot : public frc::TimedRobot {
@@ -66,7 +67,7 @@ class Robot : public frc::TimedRobot {
 
    
 
-   PigeonIMU    pigeonIMU{ 1 };
+   // PigeonIMU    pigeonIMU{ 1 };   // uncomment all pigeon code when it is connected
 
    frc::DigitalInput conveyorDIO0{0};
    frc::DigitalInput conveyorDIO1{1};
@@ -99,6 +100,7 @@ class Robot : public frc::TimedRobot {
       double initialYaw;
       bool   powercellInIntake;
       bool   powercellInPosition5;
+      bool   highGear;
    } sCurrState, sPrevState;
 
    struct sMotorState {
@@ -249,7 +251,7 @@ class Robot : public frc::TimedRobot {
                                                              // for each circle
             for ( unsigned int i = 0; i < v3fCircles.size(); i++ ) {
 
-               if ( 0 == iFrameCount%60 ) {          // every 10 seconds or so
+               if ( 0 == iFrameCount%6000 ) {          // every 10 seconds or so
                                       // Log the x and y position of the center
                                       // point of circle, and the radius.
                   std::cout << "Ball position X = " << v3fCircles[i][0] <<
@@ -407,7 +409,7 @@ class Robot : public frc::TimedRobot {
       sCurrState.iLSMasterVelocity = m_motorLSMaster.GetSelectedSensorVelocity();
       sCurrState.iRSMasterVelocity = m_motorRSMaster.GetSelectedSensorVelocity();
 
-      pigeonIMU.GetYawPitchRoll( sCurrState.yawPitchRoll );
+      // pigeonIMU.GetYawPitchRoll( sCurrState.yawPitchRoll );
 
                   // Record the positions of powercells in the conveyor system.
                   // The Digital I/O (DIO) connections are made to IR sensors,
@@ -443,7 +445,7 @@ class Robot : public frc::TimedRobot {
                sCurrState.yawPitchRoll[0] << "/" <<
                sCurrState.yawPitchRoll[1] << "/" <<
                sCurrState.yawPitchRoll[2] << endl;
-         cout << "pigeontemp: " << pigeonIMU.GetTemp() << endl; 
+//         cout << "pigeontemp: " << pigeonIMU.GetTemp() << endl; 
    }      // IMUOrientationDisplay()
 
 
@@ -510,10 +512,10 @@ class Robot : public frc::TimedRobot {
       double rightMotorOutput = 0.0;
       // m_drive.StopMotor();
 #ifndef JAG_NOTDEFINED
-      if ( ( -0.30 < desiredForward ) && ( desiredForward < 0.30 ) ) {
+      if ( ( -0.03 < desiredForward ) && ( desiredForward < 0.01 ) ) {
          desiredForward = 0.0;
       }
-      if ( ( -0.20 < desiredTurn ) && ( desiredTurn < 0.20 ) ) {
+      if ( ( -0.09 < desiredTurn ) && ( desiredTurn < 0.01 ) ) {
          desiredTurn = 0.0;
       }
       leftMotorOutput  = -desiredForward - desiredTurn;
@@ -729,10 +731,10 @@ leftMotorOutput = 0.0;
       iCallCount++;
 
       //m_shiftingSolenoid.Set(true);     // high gear?
-      m_shiftingSolenoid.Set(false);    // low gear?
+      //m_shiftingSolenoid.Set(false);    // low gear?
 
                   /* If joystick button 5 pressed, use the joystick position */
-                  /* to49184918 adjust some variables to specific speeds, so we can  */
+                  /* to adjust some variables to specific speeds, so we can  */
                   /* set the drive motors to those speeds in later code.     */
       if ( ( 0 == iCallCount%100 )  &&
            sCurrState.joyButton[5]     ) {
@@ -759,8 +761,24 @@ leftMotorOutput = 0.0;
       motorFindMinMaxVelocity( m_motorLSMaster, LSMotorState );
       motorFindMinMaxVelocity( m_motorRSMaster, RSMotorState );
 
+      if ( ( 15000 < abs(LSMotorState.sensorVmin) ) &&
+           ( 15000 < abs(RSMotorState.sensorVmin) )    ) {
+         if (!sCurrState.highGear){
+            cout << "shifting to high" << endl; 
+         }
+         sCurrState.highGear = true; // could move inside if statement
+         m_shiftingSolenoid.Set( true );  // high gear got 5700/5200
+      } else if ( ( abs(LSMotorState.sensorVmin) < 14000 ) &&
+                  ( abs(RSMotorState.sensorVmin) < 14000 )  ) {
+         if (sCurrState.highGear){
+            cout << "shifting to low" << endl;
+         }
+         sCurrState.highGear = false; // could move inside if statement
+         m_shiftingSolenoid.Set( false );    // low gear got 2800/2700
+      } 
+
       if ( 0 == iCallCount%100 )  {   // every 2 seconds
-         //JoystickDisplay();
+         JoystickDisplay();
 
          MotorDisplay( "LS:", m_motorLSMaster, LSMotorState );
          MotorDisplay( "RS:", m_motorRSMaster, RSMotorState );
@@ -1101,7 +1119,7 @@ leftMotorOutput = 0.0;
          /* runs the m_motorTopShooter and m_motorBotShooter motors to make  */
          /* the shooter do it.                                               */
          /*------------------------------------------------------------------*/
-   bool RunShooter( void ) {
+   bool RunShooter1( void ) {
       static int iCallCount = 0;
       iCallCount++;
 
@@ -1130,7 +1148,7 @@ leftMotorOutput = 0.0;
          BSMotorState.targetVelocity_UnitsPer100ms -= 100.0 * 4096 / 600;
       }
 
-      motorFindMinMaxVelocity( m_motorTopShooter, LSMotorState );
+      motorFindMinMaxVelocity( m_motorTopShooter, TSMotorState );
       motorFindMinMaxVelocity( m_motorBotShooter, BSMotorState );
 
       if ( 2 == iCallCount%100 )  {   // every 2 seconds
@@ -1171,13 +1189,39 @@ leftMotorOutput = 0.0;
       } else {
                                       // slow down slowly, over about 2 seconds
          m_motorTopShooter.Set( ControlMode::Velocity,
-                        0.99 * m_motorTopShooter.GetSelectedSensorVelocity() );
+               0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
          m_motorBotShooter.Set(ControlMode::Velocity,
-                        0.99 * m_motorBotShooter.GetSelectedSensorVelocity() );
+               0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
       }
       return true;
-   }     // RunShooter()
+   }     // RunShooter1()
 
+   bool RunShooter(void) {
+      if (   ( 0.5 < sCurrState.conY ) &&     // if console "joystick" is
+            !( 0.5 < sPrevState.conY ) ) {    // newly-pressed upward
+         TSMotorState.targetVelocity_UnitsPer100ms = 2000 * 4096 / 600;
+         BSMotorState.targetVelocity_UnitsPer100ms = 2800 * 4096 / 600;
+         m_motorTopShooter.Set( ControlMode::Velocity, 
+                                TSMotorState.targetVelocity_UnitsPer100ms );
+         m_motorBotShooter.Set( ControlMode::Velocity, 
+                                BSMotorState.targetVelocity_UnitsPer100ms );
+      } else if ( !(0.5 < sCurrState.conY) &&
+                   ( 0.5 < sPrevState.conY ) ) {    // newly-released upward
+         TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
+         BSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
+         m_motorTopShooter.Set( ControlMode::Velocity,
+               0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
+         m_motorBotShooter.Set(ControlMode::Velocity,
+               0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
+      } else if ( !(0.5 < sCurrState.conY) ) { 
+         m_motorTopShooter.Set( ControlMode::Velocity,
+               0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
+         m_motorBotShooter.Set(ControlMode::Velocity,
+               0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
+      }
+         
+      return true;
+   }     // RunShooter()
 
       /*---------------------------------------------------------------------*/
       /* RunConveyor()                                                       */
@@ -1311,16 +1355,15 @@ leftMotorOutput = 0.0;
       static int iCallCount = 0;
       iCallCount++;
 
-      // if ( sCurrState.conButton[1] ){
-      //    m_motorClimberWinch.Set( ControlMode::PercentOutput, 0.2 );
-      // } else { 
-      //    m_motorClimberWinch.Set( ControlMode::PercentOutput, 0.0 );
-      // }
-      
-      if ( 0 == iCallCount%50 ) {
-         // cout << "ClimberWinch Current: " << setw(5) <<
-         //      m_motorClimbWinch.GetStatorCurrent() << "A" << endl;
-      }
+      //if ( sCurrState.conButton[1] ){
+         //m_motorClimberWinch.Set( ControlMode::PercentOutput, 0.2 );
+            //if ( 0 == iCallCount%50 ) {
+               //cout << "ClimberWinch Current: " << setw(5) <<
+               //m_motorClimbWinch.GetStatorCurrent() << "A" << endl;
+            //}
+      //} else { 
+          //m_motorClimberWinch.Set( ControlMode::PercentOutput, 0.0 );
+      //}
    }      // RunClimberWinch()
 
 
@@ -1469,8 +1512,8 @@ leftMotorOutput = 0.0;
          m_motorLSMaster.SelectProfileSlot( 0, 0 );
          m_motorLSMaster.Config_kF( 0, 0.025,   10 );   // these work well for .15
          m_motorLSMaster.Config_kP( 0, 0.02,    10 );   // RPMs above ~200 0.2
-         m_motorLSMaster.Config_kI( 0, 0.0, 10 );// 0.0002
-         m_motorLSMaster.Config_kD( 0, 0.0,   10 );
+         m_motorLSMaster.Config_kI( 0, 0.0,     10 );// 0.0002
+         m_motorLSMaster.Config_kD( 0, 0.0,     10 );
          cout << "LSMaster encoder is okay" << endl;
       } else {
          m_motorLSMaster.SelectProfileSlot( 0, 0 );
@@ -1504,9 +1547,9 @@ leftMotorOutput = 0.0;
       if ( OK == m_motorTopShooter.ConfigSelectedFeedbackSensor(
                           FeedbackDevice::CTRE_MagEncoder_Relative, 0, 10 ) ) {
          m_motorTopShooter.SelectProfileSlot( 0, 0 );
-         m_motorTopShooter.Config_kF( 0, 0.02,    10 );
-         m_motorTopShooter.Config_kP( 0, 0.2,    10 ); // 0.08
-         m_motorTopShooter.Config_kI( 0, 0.0, 10 );     // was 0.00008
+         m_motorTopShooter.Config_kF( 0, 0.02,    10 ); // 0.02 0.01
+         m_motorTopShooter.Config_kP( 0, 0.3,     10 ); // 0.2 0.08
+         m_motorTopShooter.Config_kI( 0, 0.0,     10 ); // was 0.0 0.00008
          m_motorTopShooter.Config_kD( 0, 0.8,     10 );
       } else {
          m_motorTopShooter.SelectProfileSlot( 0, 0 );
@@ -1520,10 +1563,10 @@ leftMotorOutput = 0.0;
       if ( OK == m_motorBotShooter.ConfigSelectedFeedbackSensor(
                           FeedbackDevice::CTRE_MagEncoder_Relative, 0, 10 ) ) {
          m_motorBotShooter.SelectProfileSlot( 0, 0 );
-         m_motorBotShooter.Config_kF( 0, 0.02,    10 );
-         m_motorBotShooter.Config_kP( 0, 0.2,    10 ); // 0.08
-         m_motorBotShooter.Config_kI( 0, 0.0, 10 );  // 0.00008
-         m_motorBotShooter.Config_kD( 0, 0.8,    10 );
+         m_motorBotShooter.Config_kF( 0, 0.02,    10 ); // 0.02 0.01
+         m_motorBotShooter.Config_kP( 0, 0.3,     10 ); // 0.2 0.08
+         m_motorBotShooter.Config_kI( 0, 0.0,     10 ); // 0.0 0.00008
+         m_motorBotShooter.Config_kD( 0, 0.8,     10 );
       } else {
          m_motorBotShooter.SelectProfileSlot( 0, 0 );
          m_motorBotShooter.Config_kF( 0, 0.01, 10 );   // may have to be higher
@@ -1531,7 +1574,8 @@ leftMotorOutput = 0.0;
          m_motorBotShooter.Config_kI( 0, 0.0,  10 );
          m_motorBotShooter.Config_kD( 0, 0.0,  10 );
       }
-      m_shiftingSolenoid.Set(true);
+      sCurrState.highGear = false;
+      m_shiftingSolenoid.Set(false);
       iCallCount++;
    }      // RobotInit()
 
@@ -1547,15 +1591,14 @@ leftMotorOutput = 0.0;
       /* motors, but it can still check the joystick, joystick/console       */
       /* buttons, and sensors.                                               */
       /*---------------------------------------------------------------------*/
-   void RobotPeriodic() override {
-      static int iCallCount = 0;
-      iCallCount++;
-
+//    void RobotPeriodic() override {
+//       static int iCallCount = 0;      iCallCount++;
+// 
 //      GetAllVariables();
-
+// 
 //      SwitchCameraIfNecessary();
 //      cout << "RobotPeriodic()" << endl;
-   }
+//    }
 
 
       /*---------------------------------------------------------------------*/
@@ -1598,6 +1641,10 @@ leftMotorOutput = 0.0;
              // convert to inches, with 100 centimeters/volt and 2.54 cm/inch
          cout << "Sonar0 distance: " << distSensor0.GetVoltage() * 100 / 2.54
               << " inches (" << distSensor0.GetVoltage() << ")." << endl; 
+      }
+
+      if ( 0 == iCallCount%100 )  {   // every 2 seconds
+         JoystickDisplay();
       }
 //      cout << "TestPeriodic()" << endl;
    }
@@ -1749,7 +1796,7 @@ leftMotorOutput = 0.0;
 
       sPrevState = sCurrState;
 
-      if ( 0 == iCallCount%1000 )  {   // every 20 seconds
+      if ( 0 == iCallCount%100000 )  {   // every 20 seconds
          cout << "TelPeriodic loop duration: ";
          cout << frc::GetTime() - dTimeOfLastCall << endl;
                // use frc:Timer::GetFPGATimestamp() instead?
