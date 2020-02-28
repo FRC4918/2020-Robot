@@ -57,7 +57,7 @@ class Robot : public frc::TimedRobot {
    WPI_TalonSRX m_motorClimberPole{   4 };  // telescoping pole motor
    WPI_VictorSPX m_motorConveyMaster{ 5 };  // conveyor motor 1
    WPI_VictorSPX m_motorConveySlave{ 10 };  // conveyor motor 2
-   WPI_TalonSRX m_motorWinch{        11 };  // winch motor
+   WPI_TalonSRX m_motorClimberWinch{ 11 };  // winch motor
    WPI_VictorSPX m_motorIntake{       6 };  // intake motor
    WPI_VictorSPX m_motorFlippyFlippy{ 9 }; //  motor to spin the color wheel 
    frc::Compressor m_compressor{      0 }; // compressor
@@ -511,11 +511,10 @@ class Robot : public frc::TimedRobot {
       double  leftMotorOutput = 0.0;
       double rightMotorOutput = 0.0;
       // m_drive.StopMotor();
-#ifndef JAG_NOTDEFINED
-      if ( ( -0.03 < desiredForward ) && ( desiredForward < 0.01 ) ) {
+      if ( ( -0.045 < desiredForward ) && ( desiredForward < 0.025 ) ) {
          desiredForward = 0.0;
       }
-      if ( ( -0.09 < desiredTurn ) && ( desiredTurn < 0.01 ) ) {
+      if ( ( -0.105 < desiredTurn ) && ( desiredTurn < 0.025 ) ) {
          desiredTurn = 0.0;
       }
       leftMotorOutput  = -desiredForward - desiredTurn;
@@ -524,34 +523,14 @@ class Robot : public frc::TimedRobot {
       rightMotorOutput = std::min(  1.0, rightMotorOutput );
       leftMotorOutput  = std::max( -1.0, leftMotorOutput );
       rightMotorOutput = std::max( -1.0, rightMotorOutput );
-#else
-      if ( 0.0 < desiredForward ) {
-         if ( 0.0 < desiredTurn ) {
-            leftMotorOutput  = -desiredForward - desiredTurn;
-//          rightMotorOutput = -std::max( desiredForward, desiredTurn );
-            rightMotorOutput = -desiredForward + desiredTurn;
-         } else {
-            leftMotorOutput  = std::max( desiredForward, -desiredTurn );
-leftMotorOutput = 0.0;
-//          rightMotorOutput = -desiredForward + desiredTurn;
-         }
-      } else {
-         if ( 0.0 < desiredTurn ) {
-//          leftMotorOutput  = -std::max( desiredForward, desiredTurn );
-leftMotorOutput = 0.0;
-//          rightMotorOutput = desiredForward + desiredTurn;
-         } else {
-            leftMotorOutput  = -desiredForward - desiredTurn;
-//          rightMotorOutput = -std::max( -desiredForward, -desiredTurn );
-         }
-      }
-#endif
       m_motorLSMaster.Set( ControlMode::Velocity, 
-                          leftMotorOutput  * 5400.0 * 4096 / 600 );
+                          leftMotorOutput  * 5200.0 * 4096 / 600 );
       m_motorRSMaster.Set( ControlMode::Velocity, 
-                           rightMotorOutput * 5400.0 * 4096 / 600 );
-      LSMotorState.targetVelocity_UnitsPer100ms = leftMotorOutput  * 5400.0 * 4096 / 600 ;
-      RSMotorState.targetVelocity_UnitsPer100ms = rightMotorOutput * 5400.0 * 4096 / 600 ;
+                           rightMotorOutput * 5200.0 * 4096 / 600 );
+      LSMotorState.targetVelocity_UnitsPer100ms = leftMotorOutput  *
+	                                          5200.0 * 4096 / 600 ;
+      RSMotorState.targetVelocity_UnitsPer100ms = rightMotorOutput *
+	                                          5200.0 * 4096 / 600 ;
       //m_motorLSMaster.Set( ControlMode::PercentOutput, 
                            //leftMotorOutput  * 500.0 * 4096 / 600 / 1024);
       //m_motorRSMaster.Set( ControlMode::PercentOutput, 
@@ -828,8 +807,8 @@ leftMotorOutput = 0.0;
          //                      -m_stick.GetX() );
                         /* Use MotionMagic to set the position of the drive */
                         /* wheels, rather than setting their velocity.      */
-         m_motorLSMaster.Set( ControlMode::MotionMagic, sCurrState.joyY*4096 );
-         m_motorRSMaster.Set( ControlMode::MotionMagic, sCurrState.joyX*4096 );
+         // m_motorLSMaster.Set( ControlMode::MotionMagic, sCurrState.joyY*4096 );
+         // m_motorRSMaster.Set( ControlMode::MotionMagic, sCurrState.joyX*4096 );
 
                                       /* Button 5 is the Right-most button  */
                                       /* on the back of the joystick.       */
@@ -842,19 +821,19 @@ leftMotorOutput = 0.0;
          // m_drive.StopMotor();    // this is needed to eliminate motor warnings
 
          if ( iButtonPressCallCount < 50 ) {       // turn motors on gently...
-            m_motorLSMaster.Set( ControlMode::Velocity,
-                  m_motorLSMaster.GetSelectedSensorVelocity() +
-                     0.2 * ( LSMotorState.targetVelocity_UnitsPer100ms -
-                             m_motorLSMaster.GetSelectedSensorVelocity() ) );
-            m_motorRSMaster.Set( ControlMode::Velocity,
-                  m_motorRSMaster.GetSelectedSensorVelocity() +
-                     0.2 * ( RSMotorState.targetVelocity_UnitsPer100ms -
-                             m_motorRSMaster.GetSelectedSensorVelocity() ) );
+            // m_motorLSMaster.Set( ControlMode::Velocity,
+            //       m_motorLSMaster.GetSelectedSensorVelocity() +
+            //          0.2 * ( LSMotorState.targetVelocity_UnitsPer100ms -
+            //                  m_motorLSMaster.GetSelectedSensorVelocity() ) );
+            // m_motorRSMaster.Set( ControlMode::Velocity,
+            //       m_motorRSMaster.GetSelectedSensorVelocity() +
+            //          0.2 * ( RSMotorState.targetVelocity_UnitsPer100ms -
+            //                  m_motorRSMaster.GetSelectedSensorVelocity() ) );
          } else {
-            m_motorLSMaster.Set( ControlMode::Velocity, 
-                                   LSMotorState.targetVelocity_UnitsPer100ms);
-            m_motorRSMaster.Set( ControlMode::Velocity, 
-                                   RSMotorState.targetVelocity_UnitsPer100ms);
+            // m_motorLSMaster.Set( ControlMode::Velocity, 
+            //                        LSMotorState.targetVelocity_UnitsPer100ms);
+            // m_motorRSMaster.Set( ControlMode::Velocity, 
+            //                        RSMotorState.targetVelocity_UnitsPer100ms);
          }
          iButtonPressCallCount++;
       } else {
@@ -1114,106 +1093,43 @@ leftMotorOutput = 0.0;
 
          /*------------------------------------------------------------------*/
          /* RunShooter()                                                     */
-         /* RunShooter() drives the 2 shooter motors.  It uses joystick and  */
-         /* console inputs to determine what the shooter should do, and then */
-         /* runs the m_motorTopShooter and m_motorBotShooter motors to make  */
-         /* the shooter do it.                                               */
+         /* RunShooter() drives the 2 shooter motors.                        */
          /*------------------------------------------------------------------*/
-   bool RunShooter1( void ) {
-      static int iCallCount = 0;
-      iCallCount++;
-
-                /* The following code uses the 4 "joystick"-type buttons     */
-                /* on the console to select different speeds                 */
-                /* (targetVelocities) of the top and bottom shooter motors.  */
-      if (   ( 0.5 < sCurrState.conY ) &&     // if console "joystick" is
-            !( 0.5 < sPrevState.conY ) &&     // newly-pressed upward
-           TSMotorState.targetVelocity_UnitsPer100ms < 3000.0 * 4096 / 600 ) {
-         TSMotorState.targetVelocity_UnitsPer100ms += 100.0 * 4096 / 600;
-      } else if (  ( sCurrState.conY < -0.5 ) &&  // else if newly-pressed
-                  !( sPrevState.conY < -0.5 ) &&  // downward
-                  -3000.0 * 4096 / 600 <
-                                  TSMotorState.targetVelocity_UnitsPer100ms ) {
-         TSMotorState.targetVelocity_UnitsPer100ms -= 100.0 * 4096 / 600;
-      }
-
-      if (  ( 0.5 < sCurrState.conX ) &&     // if console "joystick" is
-           !( 0.5 < sPrevState.conX ) &&     // newly-pressed to right
-           BSMotorState.targetVelocity_UnitsPer100ms < 5000.0 * 4096 / 600 ) {
-         BSMotorState.targetVelocity_UnitsPer100ms += 100.0 * 4096 / 600;
-      } else if (  ( sCurrState.conX < -0.5 ) &&  // else if newly-pressed
-                  !( sPrevState.conX < -0.5 ) &&  // to the left
-                  -5000.0 * 4096 / 600 <
-                                  BSMotorState.targetVelocity_UnitsPer100ms ) {
-         BSMotorState.targetVelocity_UnitsPer100ms -= 100.0 * 4096 / 600;
-      }
-
-      motorFindMinMaxVelocity( m_motorTopShooter, TSMotorState );
-      motorFindMinMaxVelocity( m_motorBotShooter, BSMotorState );
-
-      if ( 2 == iCallCount%100 )  {   // every 2 seconds
-         MotorDisplay( "TS:", m_motorTopShooter, TSMotorState );
-         MotorDisplay( "BS:", m_motorBotShooter, BSMotorState );
-      }
-
-      if ( sCurrState.conButton[9] ){    // second-from-leftmost missile switch
-         m_motorTopShooter.Set( ControlMode::Velocity, 
-                                TSMotorState.targetVelocity_UnitsPer100ms );
-         m_motorBotShooter.Set( ControlMode::Velocity, 
-                                BSMotorState.targetVelocity_UnitsPer100ms );
-      } else if ( sCurrState.conButton[12] ) {       // leftmost missile switch
-         static int iButtonPressCallCount = 0;
-
-         if ( !sPrevState.conButton[12] ) {     // if switch was just turned on
-            iButtonPressCallCount = 0;
-         }
-
-         if ( iButtonPressCallCount < 50 ) {
-
-            m_motorTopShooter.Set( ControlMode::Velocity,
-                  m_motorTopShooter.GetSelectedSensorVelocity() +
-                     0.05 * ( TSMotorState.targetVelocity_UnitsPer100ms -
-                             m_motorTopShooter.GetSelectedSensorVelocity() ) );
-            m_motorBotShooter.Set( ControlMode::Velocity,
-                  m_motorBotShooter.GetSelectedSensorVelocity() +
-                     0.05 * ( BSMotorState.targetVelocity_UnitsPer100ms -
-                             m_motorBotShooter.GetSelectedSensorVelocity() ) );
-         } else {
-            m_motorTopShooter.Set( ControlMode::Velocity, 
-                                   TSMotorState.targetVelocity_UnitsPer100ms );
-            m_motorBotShooter.Set( ControlMode::Velocity, 
-                                   BSMotorState.targetVelocity_UnitsPer100ms );
-         }
-         iButtonPressCallCount++;
-         
-      } else {
-                                      // slow down slowly, over about 2 seconds
-         m_motorTopShooter.Set( ControlMode::Velocity,
-               0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
-         m_motorBotShooter.Set(ControlMode::Velocity,
-               0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
-      }
-      return true;
-   }     // RunShooter1()
-
    bool RunShooter(void) {
-      if (   ( 0.5 < sCurrState.conY ) &&     // if console "joystick" is
-            !( 0.5 < sPrevState.conY ) ) {    // newly-pressed upward
-         TSMotorState.targetVelocity_UnitsPer100ms = 2000 * 4096 / 600;
-         BSMotorState.targetVelocity_UnitsPer100ms = 2800 * 4096 / 600;
+      if (   ( 0.5 < sCurrState.conY ) &&           // if console "joystick" is
+            !( 0.5 < sPrevState.conY ) ) {          // newly-pressed downward
+         TSMotorState.targetVelocity_UnitsPer100ms =  2100 * 4096 / 600;
+         BSMotorState.targetVelocity_UnitsPer100ms = -2900 * 4096 / 600;
          m_motorTopShooter.Set( ControlMode::Velocity, 
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
-      } else if ( !(0.5 < sCurrState.conY) &&
-                   ( 0.5 < sPrevState.conY ) ) {    // newly-released upward
+      } else if ( !( 0.5 < sCurrState.conY ) &&
+                   ( 0.5 < sPrevState.conY ) ) {     // newly-released downward
          TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
          BSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
          m_motorTopShooter.Set( ControlMode::Velocity,
                0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
          m_motorBotShooter.Set(ControlMode::Velocity,
                0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
-      } else if ( !(0.5 < sCurrState.conY) ) { 
+      } else if (  ( sCurrState.conY < -0.5 ) &&  // else if console "joystick"
+                  !( sPrevState.conY < -0.5 ) ) { // is newly-pressed upward
+         TSMotorState.targetVelocity_UnitsPer100ms =  2200 * 4096 / 600;
+         BSMotorState.targetVelocity_UnitsPer100ms = -3000 * 4096 / 600;
+         m_motorTopShooter.Set( ControlMode::Velocity, 
+                                TSMotorState.targetVelocity_UnitsPer100ms );
+         m_motorBotShooter.Set( ControlMode::Velocity, 
+                                BSMotorState.targetVelocity_UnitsPer100ms );
+      } else if ( !( sCurrState.conY < -0.5 ) &&
+                   ( sPrevState.conY < -0.5 ) ) {     // newly-released downward
+         TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
+         BSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
+         m_motorTopShooter.Set( ControlMode::Velocity,
+               0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
+         m_motorBotShooter.Set(ControlMode::Velocity,
+               0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
+      } else if ( ( -0.5 < sCurrState.conY       ) && 
+                  (        sCurrState.conY < 0.5 ) ) {
          m_motorTopShooter.Set( ControlMode::Velocity,
                0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
          m_motorBotShooter.Set(ControlMode::Velocity,
@@ -1248,9 +1164,9 @@ leftMotorOutput = 0.0;
       }
       if ( sCurrState.conButton[11] ) {             // Is manual mode selected?
          if ( sCurrState.conButton[2] )   {            // Run conveyor forward.
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.8 );
-         } else if ( sCurrState.conButton[4] ) {     // Run conveyor backwards.
             m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
+         } else if ( sCurrState.conButton[4] ) {     // Run conveyor backwards.
+            m_motorConveyMaster.Set( ControlMode::PercentOutput,  0.8 );
          } else {                                         // Stop the conveyor.
                  // comment out for now, until we get a dedicated motor
                  // for this which doesn't compete with RunClimberPole().
@@ -1260,7 +1176,7 @@ leftMotorOutput = 0.0;
          if (  sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
             // for testing only, until we connect the real conveyor motors
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.8 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
          } else {
             m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
          } 
@@ -1355,15 +1271,15 @@ leftMotorOutput = 0.0;
       static int iCallCount = 0;
       iCallCount++;
 
-      //if ( sCurrState.conButton[1] ){
-         //m_motorClimberWinch.Set( ControlMode::PercentOutput, 0.2 );
-            //if ( 0 == iCallCount%50 ) {
-               //cout << "ClimberWinch Current: " << setw(5) <<
-               //m_motorClimbWinch.GetStatorCurrent() << "A" << endl;
-            //}
-      //} else { 
-          //m_motorClimberWinch.Set( ControlMode::PercentOutput, 0.0 );
-      //}
+      if ( sCurrState.conButton[9] ){
+         m_motorClimberWinch.Set( ControlMode::PercentOutput, 0.5 );
+         if ( 0 == iCallCount%50 ) {
+            cout << "ClimberWinch Current: " << setw(5) <<
+                    m_motorClimberWinch.GetStatorCurrent() << "A" << endl;
+         }
+      } else { 
+         m_motorClimberWinch.Set( ControlMode::PercentOutput, 0.0 );
+      }
    }      // RunClimberWinch()
 
 
@@ -1543,6 +1459,14 @@ leftMotorOutput = 0.0;
          cout << "RSMaster encoder is DISCONNECTED" << endl;
       }
 
+      m_motorLSMaster.SetSelectedSensorPosition( 0, 0, 10 );
+      m_motorRSMaster.SetSelectedSensorPosition( 0, 0, 10 );
+      m_motorLSMaster.SetIntegralAccumulator( 0.0 );
+      m_motorRSMaster.SetIntegralAccumulator( 0.0 );
+      LSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
+      RSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
+      Team4918Drive( 0.0, 0.0 );          // make sure drive motors are stopped
+
                                                      // if encoder is connected
       if ( OK == m_motorTopShooter.ConfigSelectedFeedbackSensor(
                           FeedbackDevice::CTRE_MagEncoder_Relative, 0, 10 ) ) {
@@ -1574,6 +1498,7 @@ leftMotorOutput = 0.0;
          m_motorBotShooter.Config_kI( 0, 0.0,  10 );
          m_motorBotShooter.Config_kD( 0, 0.0,  10 );
       }
+
       sCurrState.highGear = false;
       m_shiftingSolenoid.Set(false);
       iCallCount++;
@@ -1606,7 +1531,17 @@ leftMotorOutput = 0.0;
       /* This function is called once when the robot is disabled.            */
       /*---------------------------------------------------------------------*/
    void DisabledInit() override {
+
+      m_motorLSMaster.SetSelectedSensorPosition( 0, 0, 10 );
+      m_motorRSMaster.SetSelectedSensorPosition( 0, 0, 10 );
+      m_motorLSMaster.SetIntegralAccumulator( 0.0 );
+      m_motorRSMaster.SetIntegralAccumulator( 0.0 );
+      LSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
+      RSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
+      Team4918Drive( 0.0, 0.0 );          // make sure drive motors are stopped
+
       powercellOnVideo.TestMode = false;
+      // Should power off all motors here.
    }
 
 
@@ -1663,8 +1598,15 @@ leftMotorOutput = 0.0;
       iCallCount=0;
       GetAllVariables();
       sCurrState.initialYaw = sCurrState.yawPitchRoll[0]; 
-      TurnToHeading( sCurrState.initialYaw, true );
-      DriveToDistance( sCurrState.initialYaw, 0.0, true );
+      // TurnToHeading( sCurrState.initialYaw, true );
+      // DriveToDistance( sCurrState.initialYaw, 0.0, true );
+      m_motorLSMaster.SetSelectedSensorPosition( 0, 0, 10 );
+      m_motorRSMaster.SetSelectedSensorPosition( 0, 0, 10 );
+      m_motorLSMaster.SetIntegralAccumulator( 0.0 );
+      m_motorRSMaster.SetIntegralAccumulator( 0.0 );
+      LSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
+      RSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
+      Team4918Drive( 0.0, 0.0 );          // make sure drive motors are stopped
 
    }      // AutonomousInit()
 
@@ -1676,7 +1618,7 @@ leftMotorOutput = 0.0;
       /*---------------------------------------------------------------------*/
    void AutonomousPeriodic() override {
 
-      static double dDesiredYaw = 0.0;
+      // static double dDesiredYaw = 0.0;
 
       GetAllVariables();
 
@@ -1697,37 +1639,77 @@ leftMotorOutput = 0.0;
       // dDesiredYaw = sCurrState.initialYaw;
 
       if (iCallCount<200) {
-         if ( sCurrState.conButton[10]){
+         if ( 0 && sCurrState.conButton[10]){
             if ( TurnToHeading( sCurrState.initialYaw+270.0, false ) ) {
-               dDesiredYaw = sCurrState.initialYaw + 270.0;
+               // dDesiredYaw = sCurrState.initialYaw + 270.0;
                iCallCount = 200;
                m_motorLSMaster.SetIntegralAccumulator( 0.0 );
                m_motorRSMaster.SetIntegralAccumulator( 0.0 );
             }
-         } else if ( sCurrState.conButton[11]) {
+         } else if ( 0 && sCurrState.conButton[11]) {
             if ( TurnToHeading( sCurrState.initialYaw-90.0, false ) ) {
-               dDesiredYaw = sCurrState.initialYaw - 90.0;
+               // dDesiredYaw = sCurrState.initialYaw - 90.0;
                iCallCount = 200;
                m_motorLSMaster.SetIntegralAccumulator( 0.0 );
                m_motorRSMaster.SetIntegralAccumulator( 0.0 );
             }
          } else {
-            dDesiredYaw = sCurrState.initialYaw;
-            iCallCount = 200;
+            sCurrState.conY = 1.0;   // Tell RunShooter() to go to low speed
+            sPrevState.conY = 0.0;   // as if console joystick was
+	                             // newly-pressed downward.
+            RunShooter();
+	                             // if the motor are both spinning fast
+	    if ( ( 1800 * 4096 / 600 <
+                   abs( m_motorTopShooter.GetSelectedSensorVelocity() ) ) &&
+                 ( 2600 * 4096 / 600 <
+                   abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
+	                  // run the conveyor to shoot the balls
+               m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
+	    }
+            // dDesiredYaw = sCurrState.initialYaw;
+            // iCallCount = 200;
          }
       } else if ( iCallCount<250 ) {
+         m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
+
+         sCurrState.conY = 0.0;   // Tell RunShooter() to stop
+         sPrevState.conY = 1.0;   // as if console joystick was
+         RunShooter();            // newly-released.
                                                        // go backward 2 feet
-         if ( DriveToDistance( dDesiredYaw, -2.0, false ) ) {
-            iCallCount = 250;
-         }
+         Team4918Drive( 0.2, 0.0 );           // change to DriveToDistance()
+		                              // when the Pigeon is connected.
+  //       if ( DriveToDistance( dDesiredYaw, -2.0, false ) ) {
+  //          iCallCount = 250;
+  //       }
 //         LSMotorState.targetVelocity_UnitsPer100ms = 100.0 * 4096 / 600;
 //         RSMotorState.targetVelocity_UnitsPer100ms =-100.0 * 4096 / 600;
 //         m_motorLSMaster.Set( ControlMode::Velocity, 
 //                              LSMotorState.targetVelocity_UnitsPer100ms );
 //         m_motorRSMaster.Set( ControlMode::Velocity, 
 //                              RSMotorState.targetVelocity_UnitsPer100ms );
+      } else if ( iCallCount<300 ) {
+         m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
+
+         sCurrState.conY = 0.0;   // Tell RunShooter() to stop
+         sPrevState.conY = 1.0;   // as if console joystick was
+         RunShooter();            // newly-released.
+                                                       // go backward 2 feet
+         Team4918Drive( 0.3, 0.0 );           // change to DriveToDistance()
+		                              // when the Pigeon is connected.
+      } else if ( iCallCount<325 ) {
+         m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
+
+         sCurrState.conY = 0.0;   // Tell RunShooter() to stop
+         sPrevState.conY = 1.0;   // as if console joystick was
+         RunShooter();            // newly-released.
+                                                       // go backward 2 feet
+         Team4918Drive( 0.1, 0.0 );           // change to DriveToDistance()
+		                              // when the Pigeon is connected.
       } else {
          Team4918Drive( 0.0, 0.0 );
+         sCurrState.conY = 0.0;   // Tell RunShooter() to stop
+         sPrevState.conY = 1.0;   // as if console joystick was
+         RunShooter();            // newly-released.
 //         m_motorLSMaster.Config_kF( 0, 0.15, 10 );     // 0.15 normally
 //         m_motorRSMaster.Config_kF( 0, 0.15, 10 );
 //         LSMotorState.targetVelocity_UnitsPer100ms =   0.0 * 4096 / 600;
@@ -1759,6 +1741,11 @@ leftMotorOutput = 0.0;
                                                     // zero the drive encoders
       m_motorLSMaster.SetSelectedSensorPosition( 0, 0, 10 );
       m_motorRSMaster.SetSelectedSensorPosition( 0, 0, 10 );
+      m_motorLSMaster.SetIntegralAccumulator( 0.0 );
+      m_motorRSMaster.SetIntegralAccumulator( 0.0 );
+      LSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
+      RSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
+      Team4918Drive( 0.0, 0.0 );          // make sure drive motors are stopped
    }      // TeleopInit()
 
 
