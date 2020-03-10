@@ -241,7 +241,7 @@ class Robot : public frc::TimedRobot {
                                                     // of the detected circles
                               100,          // param1 (edge detector threshold)
                               84,  // p2: increase this to reduce false circles
-                              24,                      // minimum circle radius
+                              36,                      // minimum circle radius
                               64 );                    // maximum circle radius
                               // was: threshImg.rows / 4, 100, 50, 10, 800 );
 
@@ -310,6 +310,11 @@ class Robot : public frc::TimedRobot {
                                        (int)v3fCircles[iBiggestCircleIndex][1];
                powercellOnVideo.Radius = iBiggestCircleRadius;
                powercellOnVideo.SeenByCamera = true;
+               if ( 0 == iFrameCount%60 ) { 
+                  cout << "Powercell Seen flag " << powercellOnVideo.SeenByCamera <<
+                  ": " << powercellOnVideo.X << "/" << powercellOnVideo.Y;
+                  cout << ", " << powercellOnVideo.Radius  << "." << endl;
+               }
             } else {
                powercellOnVideo.SeenByCamera = false;
             }
@@ -538,6 +543,28 @@ class Robot : public frc::TimedRobot {
    }      // Team4918Drive()
 
 
+         /*---------------------------------------------------------------------*/
+         /* DriveByJoystick()                                                   */
+         /* Drive robot according to the commanded Y and X joystick position.   */
+         /*---------------------------------------------------------------------*/
+   void DriveByJoystick( void ) {
+                                        /* Drive the robot according to the     */
+                                        /* commanded Y and X joystick position. */
+         // m_drive.ArcadeDrive( m_stick.GetY(), -m_stick.GetX() );
+              // our joystick increases Y when pulled BACKWARDS, and increases
+              // X when pushed to the right.
+      if ( sCurrState.joyButton[2] ) {
+         Team4918Drive( sCurrState.joyY*abs(sCurrState.joyY),
+                        sCurrState.joyX*abs(sCurrState.joyX) );
+         limenttable->PutNumber( "ledMode", 3 );   // turn Limelight LEDs on
+      } else {
+         Team4918Drive( -sCurrState.joyY*abs(sCurrState.joyY),
+                         sCurrState.joyX*abs(sCurrState.joyX) );
+         limenttable->PutNumber( "ledMode", 1 );  // turn Limelight LEDs off
+      }
+   }      // DriveByJoystick()
+
+
       /*---------------------------------------------------------------------*/
       /* DriveToLimelightTarget()                                            */
       /* DriveToLimelightTarget() drives autonomously towards a limelight    */
@@ -584,11 +611,11 @@ class Robot : public frc::TimedRobot {
          } else if ( 0 <= limex )  {
                              // if target to the right, turn towards the right
             // m_drive.CurvatureDrive( -autoDriveSpeed, -(limex/30.0), 1 );
-            Team4918Drive( -autoDriveSpeed, -(limex/30.0) );
+            Team4918Drive( -autoDriveSpeed, (limex/30.0) );
          } else if ( limex < 0 ) {
                                // if target to the left, turn towards the left
             // m_drive.CurvatureDrive( -autoDriveSpeed, -(limex/30.0), 1 );
-            Team4918Drive( -autoDriveSpeed, -(limex/30.0) );
+            Team4918Drive( -autoDriveSpeed, (limex/30.0) );
          } else {
             // m_drive.CurvatureDrive( -autoDriveSpeed, 0, 0 );
             Team4918Drive( -autoDriveSpeed, 0.0 );
@@ -597,7 +624,8 @@ class Robot : public frc::TimedRobot {
       } else {                    // else limelight data is not valid any more
          // should we continue forward here?
          // m_drive.CurvatureDrive( 0.0, 0, 0 );                // stop the robot
-         Team4918Drive( 0.0, 0.0 );
+         // Team4918Drive( 0.0, 0.0 );
+         DriveByJoystick();     // no powercell seen, drive according to joystick
          returnVal = false;
       }
 
@@ -684,7 +712,8 @@ class Robot : public frc::TimedRobot {
       } else {               // else USB videocamera data is not valid any more
          // should we continue forward here?
          // m_drive.CurvatureDrive( 0.0, 0, 0 );                 // stop the robot
-         Team4918Drive( 0.0, 0.0 );
+         //Team4918Drive( 0.0, 0.0 );
+         DriveByJoystick();     // no powercell seen, drive according to joystick
          returnVal = false;
       }
 
@@ -843,10 +872,12 @@ class Robot : public frc::TimedRobot {
               // our joystick increases Y when pulled BACKWARDS, and increases
               // X when pushed to the right.
          if ( sCurrState.joyButton[2] ) {
-            Team4918Drive( sCurrState.joyY, sCurrState.joyX );
+            Team4918Drive( sCurrState.joyY*abs(sCurrState.joyY),
+                           sCurrState.joyX*abs(sCurrState.joyX) );
             limenttable->PutNumber( "ledMode", 3 );   // turn Limelight LEDs on
          } else {
-            Team4918Drive( -sCurrState.joyY, sCurrState.joyX );
+            Team4918Drive( -sCurrState.joyY*abs(sCurrState.joyY),
+                            sCurrState.joyX*abs(sCurrState.joyX) );
             limenttable->PutNumber( "ledMode", 1 );  // turn Limelight LEDs off
          }
 
@@ -1121,7 +1152,7 @@ class Robot : public frc::TimedRobot {
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
       } else if ( !( sCurrState.conY < -0.5 ) &&
-                   ( sPrevState.conY < -0.5 ) ) {     // newly-released downward
+                   ( sPrevState.conY < -0.5 ) ) {     // newly-released upward
          TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
          BSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
          m_motorTopShooter.Set( ControlMode::Velocity,
@@ -1139,6 +1170,33 @@ class Robot : public frc::TimedRobot {
       return true;
    }     // RunShooter()
 
+
+         /*------------------------------------------------------------------*/
+         /* Shoot()                                                          */
+         /* Shoot() waits until the shooter rollers are moving at a desired  */
+         /* speed, then moves the conveyor to shoot powercells.              */
+         /*------------------------------------------------------------------*/
+   void Shoot( void ) {
+      if ( 0.5 < sCurrState.conY ) {
+   	 if ( ( 1800 * 4096 / 600 <
+                   abs( m_motorTopShooter.GetSelectedSensorVelocity() ) ) &&
+              ( 2600 * 4096 / 600 <
+                   abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
+	                                 // run the conveyor to shoot the balls
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
+         }
+      } else if (sCurrState.conY < -0.5) {
+         if ( ( 1900 * 4096 / 600 <
+                   abs( m_motorTopShooter.GetSelectedSensorVelocity() ) ) &&
+              ( 2700 * 4096 / 600 <
+                   abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
+	                                 // run the conveyor to shoot the balls
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
+         }
+      }
+   }
+
+   
       /*---------------------------------------------------------------------*/
       /* RunConveyor()                                                       */
       /* Run the conveyor belt motors, to move balls into and through the    */
@@ -1170,15 +1228,20 @@ class Robot : public frc::TimedRobot {
          } else {                                         // Stop the conveyor.
                  // comment out for now, until we get a dedicated motor
                  // for this which doesn't compete with RunClimberPole().
-           m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0);
+            if (sPrevState.conButton[2]||sPrevState.conButton[4]){
+               m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0);
+            }
          } 
       } else {  
          if (  sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
             // for testing only, until we connect the real conveyor motors
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.5 );
          } else {
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
+            //if (sPrevState.powercellInIntake && 
+                //!sPrevState.powercellInPosition5 ){
+               m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
+            //}
          } 
       }
    }   // RunConveyor()
@@ -1231,7 +1294,7 @@ class Robot : public frc::TimedRobot {
             m_motorClimberPole.Set( ControlMode::PercentOutput, 0.10 );
          } else {
                                                    // apply full climbing power
-            m_motorClimberPole.Set( ControlMode::PercentOutput, 0.35 );
+            m_motorClimberPole.Set( ControlMode::PercentOutput, 0.45 );
             if ( m_motorClimberPole.IsFwdLimitSwitchClosed() ) {
                limitSwitchHasBeenHit = true;
             }
@@ -1498,6 +1561,8 @@ class Robot : public frc::TimedRobot {
          m_motorBotShooter.Config_kI( 0, 0.0,  10 );
          m_motorBotShooter.Config_kD( 0, 0.0,  10 );
       }
+
+      m_motorConveyMaster.SetNeutralMode( NeutralMode::Brake );
 
       sCurrState.highGear = false;
       m_shiftingSolenoid.Set(false);
@@ -1771,6 +1836,8 @@ class Robot : public frc::TimedRobot {
       RunDriveMotors();
 
       RunShooter();
+
+      Shoot();
 
       RunConveyor();
 
