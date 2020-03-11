@@ -65,9 +65,7 @@ class Robot : public frc::TimedRobot {
    frc::Solenoid m_shiftingSolenoid{ 0, 7};
    frc::DoubleSolenoid m_flipperSolenoid{ 0, 1};
 
-   
-
-   // PigeonIMU    pigeonIMU{ 1 };   // uncomment all pigeon code when it is connected
+   PigeonIMU    pigeonIMU{ 1 };
 
    frc::DigitalInput conveyorDIO0{0};
    frc::DigitalInput conveyorDIO1{1};
@@ -96,6 +94,8 @@ class Robot : public frc::TimedRobot {
       int    iRSMasterPosition;
       int    iLSMasterVelocity;
       int    iRSMasterVelocity;
+      int    iIntakePercent;
+      int    iConveyPercent;
       double yawPitchRoll[3];  // data from Pigeon IMU
       double initialYaw;
       bool   powercellInIntake;
@@ -414,7 +414,7 @@ class Robot : public frc::TimedRobot {
       sCurrState.iLSMasterVelocity = m_motorLSMaster.GetSelectedSensorVelocity();
       sCurrState.iRSMasterVelocity = m_motorRSMaster.GetSelectedSensorVelocity();
 
-      // pigeonIMU.GetYawPitchRoll( sCurrState.yawPitchRoll );
+      pigeonIMU.GetYawPitchRoll( sCurrState.yawPitchRoll );
 
                   // Record the positions of powercells in the conveyor system.
                   // The Digital I/O (DIO) connections are made to IR sensors,
@@ -543,24 +543,22 @@ class Robot : public frc::TimedRobot {
    }      // Team4918Drive()
 
 
-         /*---------------------------------------------------------------------*/
-         /* DriveByJoystick()                                                   */
-         /* Drive robot according to the commanded Y and X joystick position.   */
-         /*---------------------------------------------------------------------*/
+      /*---------------------------------------------------------------------*/
+      /* DriveByJoystick()                                                   */
+      /* Drive robot according to the commanded Y and X joystick position.   */
+      /*---------------------------------------------------------------------*/
    void DriveByJoystick( void ) {
-                                        /* Drive the robot according to the     */
-                                        /* commanded Y and X joystick position. */
          // m_drive.ArcadeDrive( m_stick.GetY(), -m_stick.GetX() );
               // our joystick increases Y when pulled BACKWARDS, and increases
               // X when pushed to the right.
       if ( sCurrState.joyButton[2] ) {
          Team4918Drive( sCurrState.joyY*abs(sCurrState.joyY),
                         sCurrState.joyX*abs(sCurrState.joyX) );
-         limenttable->PutNumber( "ledMode", 3 );   // turn Limelight LEDs on
+         // limenttable->PutNumber( "ledMode", 3 );   // turn Limelight LEDs on
       } else {
          Team4918Drive( -sCurrState.joyY*abs(sCurrState.joyY),
                          sCurrState.joyX*abs(sCurrState.joyX) );
-         limenttable->PutNumber( "ledMode", 1 );  // turn Limelight LEDs off
+         // limenttable->PutNumber( "ledMode", 1 );  // turn Limelight LEDs off
       }
    }      // DriveByJoystick()
 
@@ -578,7 +576,7 @@ class Robot : public frc::TimedRobot {
 
       iCallCount++;
 
-      limenttable->PutNumber( "ledMode", 3 );                   // turn LEDs on
+      // limenttable->PutNumber( "ledMode", 3 );                   // turn LEDs on
 
       if ( 1 == limev )  {                       // if limelight data is valid
          double autoDriveSpeed;
@@ -671,18 +669,18 @@ class Robot : public frc::TimedRobot {
              // autoDriveSpeed by using a math expression based on
              // powercellOnVideo.Y values.
          if        ( powercellOnVideo.Y < -50 ) {  // if we're super close
-            autoDriveSpeed = -0.35;   //   go backward slowly
-         } else if ( powercellOnVideo.Y < -30 ) {  // if we're super close
-            autoDriveSpeed = -0.25;   //   go backward slowly
-            autoDriveSpeed = -0.35 * float( - 30 - powercellOnVideo.Y ) / 20.0;
-         } else if ( powercellOnVideo.Y < 0 )   { // if we're really close...
-            autoDriveSpeed = 0.0;     //   stop (or 0.08 to go slow)
+            autoDriveSpeed = 0.10;   //   go forward very slowly
+         } else if ( powercellOnVideo.Y < -30 ) {  // if we're pretty close
+            // autoDriveSpeed = -0.25;   //   go forward slowly
+            autoDriveSpeed = 0.10 + 0.05 * float( - 30 - powercellOnVideo.Y ) / 20.0;
+         } else if ( powercellOnVideo.Y < 0 )   { // if we're sortof close...
+            autoDriveSpeed = 0.15;    //   go at a set speed
          } else if ( powercellOnVideo.Y <  20 ) {  // if we're a little farther
-            autoDriveSpeed = 0.15;    //   go a little faster
-            autoDriveSpeed = 0.20 * float( powercellOnVideo.Y ) / 20.0;
+            // autoDriveSpeed = 0.15;    //   go a little faster
+            autoDriveSpeed = 0.15 + 0.05 * float( powercellOnVideo.Y ) / 20.0;
          } else if (  powercellOnVideo.Y < 40 ) {  // if we're farther still...
             autoDriveSpeed = 0.20;    //   go a little faster still
-            autoDriveSpeed = 0.20 + 0.20 * float( powercellOnVideo.Y - 20 ) / 40.0;
+            autoDriveSpeed = 0.20 + 0.10 * float( powercellOnVideo.Y - 20 ) / 40.0;
          } else {                     // else we must be really far...
             autoDriveSpeed = 0.30;    //   go as fast as we dare
          }
@@ -693,16 +691,20 @@ class Robot : public frc::TimedRobot {
 
          // May have to add/subtract a constant from x-values here, to account
          // for the offset of the camera away from the centerline of the robot.
-         if        ( 0 <= powercellOnVideo.X ) {
+         if        ( 5 <= powercellOnVideo.X ) {
                              // if target to the right, turn towards the right
             //m_drive.CurvatureDrive( -autoDriveSpeed,
             //                        -sqrt((powercellOnVideo.X/300.0)), 1 );
-            Team4918Drive( autoDriveSpeed, sqrt(powercellOnVideo.X/300.0) );
-         } else if ( powercellOnVideo.X < 0 ) {
+            Team4918Drive( autoDriveSpeed,
+			   std::min( powercellOnVideo.X/300.0, 1.0 ) );
+			   // sqrt(powercellOnVideo.X/300.0) );
+         } else if ( powercellOnVideo.X < -5 ) {
                                // if target to the left, turn towards the left
             //m_drive.CurvatureDrive( -autoDriveSpeed,
             //                        sqrt((-powercellOnVideo.X/300.0)), 1 );
-            Team4918Drive( autoDriveSpeed, -sqrt(-powercellOnVideo.X/300.0) );           
+            Team4918Drive( autoDriveSpeed,
+			   std::max( powercellOnVideo.X/300.0, -1.0 ) );
+			   // -sqrt(-powercellOnVideo.X/300.0) );           
          } else {
             //m_drive.CurvatureDrive( -autoDriveSpeed, 0, 0 );
 
@@ -868,19 +870,7 @@ class Robot : public frc::TimedRobot {
       } else {
                                     /* Drive the robot according to the     */
                                     /* commanded Y and X joystick position. */
-         // m_drive.ArcadeDrive( m_stick.GetY(), -m_stick.GetX() );
-              // our joystick increases Y when pulled BACKWARDS, and increases
-              // X when pushed to the right.
-         if ( sCurrState.joyButton[2] ) {
-            Team4918Drive( sCurrState.joyY*abs(sCurrState.joyY),
-                           sCurrState.joyX*abs(sCurrState.joyX) );
-            limenttable->PutNumber( "ledMode", 3 );   // turn Limelight LEDs on
-         } else {
-            Team4918Drive( -sCurrState.joyY*abs(sCurrState.joyY),
-                            sCurrState.joyX*abs(sCurrState.joyX) );
-            limenttable->PutNumber( "ledMode", 1 );  // turn Limelight LEDs off
-         }
-
+         DriveByJoystick();
       }
       return true;
    }      // RunDriveMotors()
@@ -1183,6 +1173,7 @@ class Robot : public frc::TimedRobot {
               ( 2600 * 4096 / 600 <
                    abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
 	                                 // run the conveyor to shoot the balls
+	    sCurrState.iConveyPercent = -80;
             m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
          }
       } else if (sCurrState.conY < -0.5) {
@@ -1191,6 +1182,7 @@ class Robot : public frc::TimedRobot {
               ( 2700 * 4096 / 600 <
                    abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
 	                                 // run the conveyor to shoot the balls
+	    sCurrState.iConveyPercent = -80;
             m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
          }
       }
@@ -1222,12 +1214,14 @@ class Robot : public frc::TimedRobot {
       }
       if ( sCurrState.conButton[11] ) {             // Is manual mode selected?
          if ( sCurrState.conButton[2] )   {            // Run conveyor forward.
+            sCurrState.iConveyPercent = -80;
             m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
          } else if ( sCurrState.conButton[4] ) {     // Run conveyor backwards.
+            sCurrState.iIntakePercent = 40;       // Run intake backwards, too.
+            sCurrState.iConveyPercent = 80;
             m_motorConveyMaster.Set( ControlMode::PercentOutput,  0.8 );
          } else {                                         // Stop the conveyor.
-                 // comment out for now, until we get a dedicated motor
-                 // for this which doesn't compete with RunClimberPole().
+            sCurrState.iConveyPercent = 0;
             if (sPrevState.conButton[2]||sPrevState.conButton[4]){
                m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0);
             }
@@ -1235,15 +1229,20 @@ class Robot : public frc::TimedRobot {
       } else {  
          if (  sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
-            // for testing only, until we connect the real conveyor motors
+            sCurrState.iConveyPercent = -50;
             m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.5 );
          } else {
             //if (sPrevState.powercellInIntake && 
                 //!sPrevState.powercellInPosition5 ){
+            sCurrState.iConveyPercent = 0;
                m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
             //}
          } 
       }
+//    if ( sPrevState.iConveyPercent != sCurrState.iConveyPercent ) {
+//       m_motorConveyMaster.Set( ControlMode::PercentOutput,
+//	                          (double)sCurrState.iConveyPercent / 100.0 );
+//    }
    }   // RunConveyor()
 
       /*---------------------------------------------------------------------*/
@@ -1615,7 +1614,7 @@ class Robot : public frc::TimedRobot {
       /* This function is called once when the robot enters Test mode.       */
       /*---------------------------------------------------------------------*/
    void TestInit() override {
-      limenttable->PutNumber( "ledMode", 1 );                  // turn LEDs off
+      // limenttable->PutNumber( "ledMode", 1 );                  // turn LEDs off
       powercellOnVideo.TestMode = true;  // display the center pixel HSV values
    }
 
@@ -1657,7 +1656,7 @@ class Robot : public frc::TimedRobot {
    void AutonomousInit() override {
       RobotInit();
       m_compressor.Start();
-      limenttable->PutNumber( "ledMode", 3 );                   // turn LEDs on
+      // limenttable->PutNumber( "ledMode", 3 );                   // turn LEDs on
       cout << "shoot 3 balls" << endl;
       // m_drive.StopMotor();
       iCallCount=0;
@@ -1692,7 +1691,11 @@ class Robot : public frc::TimedRobot {
       //m_motorIntake.Set(ControlMode::PercentOutput, -0.4);
 
       if ( sCurrState.conButton[8] )   {            // Run intake forward.
-         m_motorIntake.Set( ControlMode::PercentOutput, -0.4 );
+         if (  sCurrState.powercellInIntake ) {       // if powercell in intake
+            m_motorIntake.Set( ControlMode::PercentOutput, -0.1 ); // be gentle
+	 } else {
+            m_motorIntake.Set( ControlMode::PercentOutput, -0.4 ); // be strong
+	 }
       } else {                                         // Stop the intake.
          m_motorIntake.Set( ControlMode::PercentOutput, 0.0 );
       }
@@ -1723,18 +1726,20 @@ class Robot : public frc::TimedRobot {
             sPrevState.conY = 0.0;   // as if console joystick was
 	                             // newly-pressed downward.
             RunShooter();
-	                             // if the motor are both spinning fast
+	                             // if the motors are both spinning fast
 	    if ( ( 1800 * 4096 / 600 <
                    abs( m_motorTopShooter.GetSelectedSensorVelocity() ) ) &&
                  ( 2600 * 4096 / 600 <
                    abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
 	                  // run the conveyor to shoot the balls
+	       sCurrState.iConveyPercent = -80;
                m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
 	    }
             // dDesiredYaw = sCurrState.initialYaw;
             // iCallCount = 200;
          }
       } else if ( iCallCount<250 ) {
+	 sCurrState.iConveyPercent = 0;
          m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
 
          sCurrState.conY = 0.0;   // Tell RunShooter() to stop
@@ -1753,6 +1758,7 @@ class Robot : public frc::TimedRobot {
 //         m_motorRSMaster.Set( ControlMode::Velocity, 
 //                              RSMotorState.targetVelocity_UnitsPer100ms );
       } else if ( iCallCount<300 ) {
+	 sCurrState.iConveyPercent = 0;
          m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
 
          sCurrState.conY = 0.0;   // Tell RunShooter() to stop
@@ -1762,6 +1768,7 @@ class Robot : public frc::TimedRobot {
          Team4918Drive( 0.3, 0.0 );           // change to DriveToDistance()
 		                              // when the Pigeon is connected.
       } else if ( iCallCount<325 ) {
+	 sCurrState.iConveyPercent = 0;
          m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
 
          sCurrState.conY = 0.0;   // Tell RunShooter() to stop
@@ -1827,7 +1834,11 @@ class Robot : public frc::TimedRobot {
       //m_motorIntake.Set(ControlMode::PercentOutput, -0.4);
 
       if ( sCurrState.conButton[8] )   {            // Run intake forward.
-         m_motorIntake.Set( ControlMode::PercentOutput, -0.4 );
+         if (  sCurrState.powercellInIntake ) {       // if powercell in intake
+            m_motorIntake.Set( ControlMode::PercentOutput, -0.1 ); // be gentle
+	 } else {
+            m_motorIntake.Set( ControlMode::PercentOutput, -0.4 ); // be strong
+	 }
       } else {                                         // Stop the intake.
          m_motorIntake.Set( ControlMode::PercentOutput, 0.0 );
       } 
