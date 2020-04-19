@@ -1176,7 +1176,7 @@ class Robot : public frc::TimedRobot {
          if (  sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
             // for testing only, until we connect the real conveyor motors
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.4 );
          } else {
             m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
          } 
