@@ -94,8 +94,12 @@ class Robot : public frc::TimedRobot {
       bool   conButton[13];
       int    iLSMasterPosition;
       int    iRSMasterPosition;
+      int    iTSMasterPosition;//Top Shooter
+      int    iBSMasterPosition;//Bot Shooter
       int    iLSMasterVelocity;
       int    iRSMasterVelocity;
+      int    iTSMasterVelocity;//Top Shooter
+      int    iBSMasterVelocity;//Bot Shooter
       double yawPitchRoll[3];  // data from Pigeon IMU
       double initialYaw;
       bool   powercellInIntake;
@@ -406,8 +410,12 @@ class Robot : public frc::TimedRobot {
 
       sCurrState.iLSMasterPosition = m_motorLSMaster.GetSelectedSensorPosition();
       sCurrState.iRSMasterPosition = m_motorRSMaster.GetSelectedSensorPosition();
+      sCurrState.iTSMasterPosition = m_motorTopShooter.GetSelectedSensorPosition();
+      sCurrState.iBSMasterPosition = m_motorBotShooter.GetSelectedSensorPosition();
       sCurrState.iLSMasterVelocity = m_motorLSMaster.GetSelectedSensorVelocity();
       sCurrState.iRSMasterVelocity = m_motorRSMaster.GetSelectedSensorVelocity();
+      sCurrState.iTSMasterVelocity = m_motorTopShooter.GetSelectedSensorVelocity();
+      sCurrState.iBSMasterVelocity = m_motorBotShooter.GetSelectedSensorVelocity();
 
       // pigeonIMU.GetYawPitchRoll( sCurrState.yawPitchRoll );
 
@@ -1128,11 +1136,12 @@ class Robot : public frc::TimedRobot {
                0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
          m_motorBotShooter.Set(ControlMode::Velocity,
                0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
+      }       /*** Following code for testing only - slowly spit out balls
                when console "joystick" is pushed in the positive direction ***/
       else if ( ( sCurrState.conX > 0.5 ) &&  //newly pressed rightward
                !( sPrevState.conX > 0.5 ) ) {
-         TSMotorState.targetVelocity_UnitsPer100ms =  200 * 4096 / 600;
-         BSMotorState.targetVelocity_UnitsPer100ms = -200 * 4096 / 600;
+         TSMotorState.targetVelocity_UnitsPer100ms =  600 * 4096 / 600;
+         BSMotorState.targetVelocity_UnitsPer100ms = -600 * 4096 / 600;
          m_motorTopShooter.Set( ControlMode::Velocity, 
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
@@ -1145,15 +1154,19 @@ class Robot : public frc::TimedRobot {
                0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
          m_motorBotShooter.Set(ControlMode::Velocity,
                0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
-      } else if (sCurrState.conX > 0.5) {
-         std::cout << "Keep Cruising\n";
+      } else if (sCurrState.conX > 0.5) {//keep running if pushed right
          m_motorTopShooter.Set( ControlMode::Velocity, 
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
+         if ( !sCurrState.conButton[11]  && 
+              ( (sCurrState.iTSMasterVelocity > 350) && 
+                (sCurrState.iBSMasterVelocity < -350) ) ) {
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
+         }
+      /***End of testing code***/
       } else if ( ( -0.5 < sCurrState.conY       ) && 
                   (        sCurrState.conY < 0.5 ) ) {
-         std::cout << "Stop\n";
          m_motorTopShooter.Set( ControlMode::Velocity,
                0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
          m_motorBotShooter.Set(ControlMode::Velocity,
@@ -1180,7 +1193,7 @@ class Robot : public frc::TimedRobot {
 
       if ( sPrevState.powercellInPosition5 !=
                                           sCurrState.powercellInPosition5 ) {
-         if ( sCurrState.powercellInPosition5 ) {              // if this sensor is blocked
+         if ( sCurrState.powercellInPosition5 ) {// if this sensor is blocked
             cout << "powercell in position 5" << endl;
          } else {
             cout << "powercell NOT in position 5" << endl; 
@@ -1197,13 +1210,15 @@ class Robot : public frc::TimedRobot {
            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0);
          } 
       } else {  
-         if (  sCurrState.powercellInIntake &&
+         if ( !(sCurrState.conX > 0.5) ) {
+            if ( sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
             // for testing only, until we connect the real conveyor motors
             m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
          } else {
             m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
          } 
+         }
       }
    }   // RunConveyor()
 
@@ -1268,8 +1283,8 @@ class Robot : public frc::TimedRobot {
       }
       
 
-      if ( 0 == iCallCount%50 ) { 
-         if ( sCurrState.conButton[1] || sCurrState.conButton[3] ) {                            // every 2 seconds
+      if ( 0 == iCallCount%50 ) { // every 2 seconds
+         if ( sCurrState.conButton[1] || sCurrState.conButton[3] ) {
             if ( sCurrState.conButton[1] ) {
                cout << "ClimberUp: ";
             } else {
