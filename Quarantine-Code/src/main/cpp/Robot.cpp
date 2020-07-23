@@ -116,6 +116,7 @@ class Robot : public frc::TimedRobot {
 
    bool aBooleanVariable = false;    // just an example of a boolean variable
    int    iCallCount = 0;
+   int    state = 0; 
    double dTimeOfLastCall = 0.0;
 
  public:
@@ -631,6 +632,8 @@ class Robot : public frc::TimedRobot {
       static int  iCallCount = 0;
 
       iCallCount++;
+          m_motorIntake.Set( ControlMode::PercentOutput, -0.4 );
+          RunConveyor();
 
       if ( powercellOnVideo.SeenByCamera ) {      // if USB video data is valid
          double autoDriveSpeed;
@@ -748,21 +751,29 @@ class Robot : public frc::TimedRobot {
       motorFindMinMaxVelocity( m_motorLSMaster, LSMotorState );
       motorFindMinMaxVelocity( m_motorRSMaster, RSMotorState );
 
-      if ( ( 15000 < abs(LSMotorState.sensorVmin) ) &&
-           ( 15000 < abs(RSMotorState.sensorVmin) )    ) {
-         if (!sCurrState.highGear){
-            cout << "shifting to high" << endl; 
-         }
-         sCurrState.highGear = true; // could move inside if statement
-         m_shiftingSolenoid.Set( true );  // high gear got 5700/5200
-      } else if ( ( abs(LSMotorState.sensorVmin) < 14000 ) &&
-                  ( abs(RSMotorState.sensorVmin) < 14000 )  ) {
-         if (sCurrState.highGear){
-            cout << "shifting to low" << endl;
-         }
-         sCurrState.highGear = false; // could move inside if statement
-         m_shiftingSolenoid.Set( false );    // low gear got 2800/2700
-      } 
+      if (sCurrState.joyButton[1]) { //when button 1 is pressed, shift into high gear until released
+         sCurrState.highGear = true;
+         m_shiftingSolenoid.Set( true );
+      } else if (!sCurrState.joyButton[1]) {
+         sCurrState.highGear = false;
+         m_shiftingSolenoid.Set( false );
+      }
+
+     // if ( ( 15000 < abs(LSMotorState.sensorVmin) ) &&
+         //  ( 15000 < abs(RSMotorState.sensorVmin) )    ) {
+        // if (!sCurrState.highGear){
+           // cout << "shifting to high" << endl; 
+        // }
+        // sCurrState.highGear = true; // could move inside if statement
+        // m_shiftingSolenoid.Set( true );  // high gear got 5700/5200
+     // } else if ( ( abs(LSMotorState.sensorVmin) < 14000 ) &&
+                 // ( abs(RSMotorState.sensorVmin) < 14000 )  ) {
+         //if (sCurrState.highGear){
+           // cout << "shifting to low" << endl;
+         //}
+        // sCurrState.highGear = false; // could move inside if statement
+         // m_shiftingSolenoid.Set( false );    // low gear got 2800/2700
+     // } 
 
       if ( 0 == iCallCount%100 )  {   // every 2 seconds
          JoystickDisplay();
@@ -788,9 +799,8 @@ class Robot : public frc::TimedRobot {
                                  // then autonomously drive towards the target
          DriveToLimelightTarget();
 
-      } else if ( ( !sCurrState.joyButton[2] ) &&  // If driver is NOT pressing
-                  ( sCurrState.joyButton[1] ) &&   // the "ReverseDrive" button 
-                  ( powercellOnVideo.SeenByCamera ) ) { // and is pressing the
+      } else if ( ( sCurrState.joyButton[4] ) &&   // If driver is pressing button four
+                  ( powercellOnVideo.SeenByCamera ) ) { 
                               // trigger ("DriveToPowercell"), and
                               // the USB videocamera has seen a powercell,
          DriveToPowercell();  // then autonomously drive towards the powercell
@@ -1112,6 +1122,9 @@ class Robot : public frc::TimedRobot {
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
+         if ( !sCurrState.conButton[11] ) {
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
+         }
       } else if ( !( 0.5 < sCurrState.conY ) &&
                    ( 0.5 < sPrevState.conY ) ) {     // newly-released downward
          TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
@@ -1120,6 +1133,7 @@ class Robot : public frc::TimedRobot {
                0.95 * (double)m_motorTopShooter.GetSelectedSensorVelocity() );
          m_motorBotShooter.Set(ControlMode::Velocity,
                0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
+         
       } else if (  ( sCurrState.conY < -0.5 ) &&  // else if console "joystick"
                   !( sPrevState.conY < -0.5 ) ) { // is newly-pressed upward
          TSMotorState.targetVelocity_UnitsPer100ms =  2200 * 4096 / 600;
@@ -1128,6 +1142,9 @@ class Robot : public frc::TimedRobot {
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
+          if ( !sCurrState.conButton[11] ) {
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 ); 
+         }
       } else if ( !( sCurrState.conY < -0.5 ) &&
                    ( sPrevState.conY < -0.5 ) ) {     // newly-released upward
          TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
@@ -1160,8 +1177,8 @@ class Robot : public frc::TimedRobot {
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
          if ( !sCurrState.conButton[11]  && 
-              ( (sCurrState.iTSMasterVelocity > 350) && 
-                (sCurrState.iBSMasterVelocity < -350) ) ) {
+              ( (sCurrState.iTSMasterVelocity > 550) && 
+                (sCurrState.iBSMasterVelocity < -550) ) ) {
             m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
          }
       /***End of testing code***/
@@ -1182,7 +1199,7 @@ class Robot : public frc::TimedRobot {
       /* conveyor system.                                                    */
       /*---------------------------------------------------------------------*/
    void RunConveyor( void ) {
-
+      //print out if there is a powercell in the intake or not. 
       if ( sPrevState.powercellInIntake != sCurrState.powercellInIntake ) {
          if ( sCurrState.powercellInIntake ) {
             cout << "powercell in the intake." << endl;
@@ -1190,7 +1207,7 @@ class Robot : public frc::TimedRobot {
             cout << "powercell NOT in the intake." << endl; 
          } 
       }
-
+      // print out if there is a ball in position 5. 
       if ( sPrevState.powercellInPosition5 !=
                                           sCurrState.powercellInPosition5 ) {
          if ( sCurrState.powercellInPosition5 ) {// if this sensor is blocked
@@ -1205,19 +1222,17 @@ class Robot : public frc::TimedRobot {
          } else if ( sCurrState.conButton[4] ) {     // Run conveyor backwards.
             m_motorConveyMaster.Set( ControlMode::PercentOutput,  0.8 );
          } else {                                         // Stop the conveyor.
-                 // comment out for now, until we get a dedicated motor
-                 // for this which doesn't compete with RunClimberPole().
            m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0);
          } 
       } else {  
-         if ( !(sCurrState.conX > 0.5) ) {
+         if ( !(sCurrState.conX > 0.5) && !(sCurrState.conY > 0.5) && 
+              !(sCurrState.conY < -0.5) ) {
             if ( sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
-            // for testing only, until we connect the real conveyor motors
             m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
-         } else {
+            } else {
             m_motorConveyMaster.Set( ControlMode::PercentOutput, 0.0 );
-         } 
+            } 
          }
       }
    }   // RunConveyor()
@@ -1261,16 +1276,16 @@ class Robot : public frc::TimedRobot {
                                  0.5*sCurrState.joyZ);
       
       } else if ( sCurrState.conButton[1] ){
-         if ( !sPrevState.conButton[1] ) {         // if button 1 has just been
-            limitSwitchHasBeenHit = false;         // pressed, reset to start
-            m_compressor.Stop();
-         }
+         //if ( !sPrevState.conButton[1] ) {         // if button 1 has just been
+           // limitSwitchHasBeenHit = false;         // pressed, reset to start
+           // m_compressor.Stop();
+         //}
          if ( limitSwitchHasBeenHit ) {
                  // we are at the top; just supply a little power to stay there
             m_motorClimberPole.Set( ControlMode::PercentOutput, 0.10 );
          } else {
                                                    // apply full climbing power
-            m_motorClimberPole.Set( ControlMode::PercentOutput, 0.35 );
+            m_motorClimberPole.Set( ControlMode::PercentOutput, 0.4 );
             if ( m_motorClimberPole.IsFwdLimitSwitchClosed() ) {
                limitSwitchHasBeenHit = true;
             }
@@ -1647,6 +1662,7 @@ class Robot : public frc::TimedRobot {
       RSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
       Team4918Drive( 0.0, 0.0 );          // make sure drive motors are stopped
 
+      DriveToDistance (sCurrState.initialYaw, 0.0, true);
    }      // AutonomousInit()
 
 
@@ -1686,25 +1702,20 @@ class Robot : public frc::TimedRobot {
                m_motorRSMaster.SetIntegralAccumulator( 0.0 );
             }
          } else if ( 0 && sCurrState.conButton[11]) {
-            if ( TurnToHeading( sCurrState.initialYaw-90.0, false ) ) {
-               // dDesiredYaw = sCurrState.initialYaw - 90.0;
-               iCallCount = 200;
-               m_motorLSMaster.SetIntegralAccumulator( 0.0 );
-               m_motorRSMaster.SetIntegralAccumulator( 0.0 );
-            }
+               iCallCount = 1000;
          } else {
             sCurrState.conY = 1.0;   // Tell RunShooter() to go to low speed
             sPrevState.conY = 0.0;   // as if console joystick was
 	                             // newly-pressed downward.
             RunShooter();
 	                             // if the motor are both spinning fast
-	    if ( ( 1800 * 4096 / 600 <
+	         if ( ( 1800 * 4096 / 600 <
                    abs( m_motorTopShooter.GetSelectedSensorVelocity() ) ) &&
                  ( 2600 * 4096 / 600 <
                    abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
 	                  // run the conveyor to shoot the balls
                m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
-	    }
+            }
             // dDesiredYaw = sCurrState.initialYaw;
             // iCallCount = 200;
          }
@@ -1744,6 +1755,19 @@ class Robot : public frc::TimedRobot {
                                                        // go backward 2 feet
          Team4918Drive( 0.1, 0.0 );           // change to DriveToDistance()
 		                              // when the Pigeon is connected.
+      } else if ( iCallCount<1100 && 0 == state) {
+               if (DriveToDistance(sCurrState.initialYaw, 2.5, false)){
+                  state = 1;
+                  iCallCount = 1100; 
+               }
+      } else if (iCallCount < 1200 && 1 == state){
+
+               if (powercellOnVideo.SeenByCamera){
+                  DriveToPowercell();
+               
+
+
+               }
       } else {
          Team4918Drive( 0.0, 0.0 );
          sCurrState.conY = 0.0;   // Tell RunShooter() to stop
@@ -1763,10 +1787,11 @@ class Robot : public frc::TimedRobot {
       motorFindMinMaxVelocity( m_motorRSMaster, RSMotorState );
 
       if ( 0 == iCallCount%50 ) {
-         MotorDisplay( "LS:", m_motorLSMaster, LSMotorState );
+         MotorDisplay( "LS:", m_motorLSMaster, LSMotorState ); 
          MotorDisplay( "RS:", m_motorRSMaster, RSMotorState );
          IMUOrientationDisplay();
       }
+
    }      // AutonomousPeriodic()
 
 
