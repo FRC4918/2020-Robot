@@ -67,7 +67,7 @@ class Robot : public frc::TimedRobot {
 
    
 
-   // PigeonIMU    pigeonIMU{ 1 };   // uncomment all pigeon code when it is connected
+   PigeonIMU    pigeonIMU{ 1 };   // uncomment all pigeon code when it is connected
 
    frc::DigitalInput conveyorDIO0{0};
    frc::DigitalInput conveyorDIO1{1};
@@ -79,6 +79,7 @@ class Robot : public frc::TimedRobot {
    // frc::DifferentialDrive m_drive{ m_motorLSMaster, m_motorRSMaster };
    //frc::PowerDistributionPanel pdp{0};
    frc::AnalogInput distSensor0{0};
+   frc::AnalogInput distSensor1{1};
    frc::BuiltInAccelerometer RoborioAccel{};
 
    std::shared_ptr<NetworkTable> limenttable =
@@ -418,7 +419,7 @@ class Robot : public frc::TimedRobot {
       sCurrState.iTSMasterVelocity = m_motorTopShooter.GetSelectedSensorVelocity();
       sCurrState.iBSMasterVelocity = m_motorBotShooter.GetSelectedSensorVelocity();
 
-      // pigeonIMU.GetYawPitchRoll( sCurrState.yawPitchRoll );
+      pigeonIMU.GetYawPitchRoll( sCurrState.yawPitchRoll );
 
                   // Record the positions of powercells in the conveyor system.
                   // The Digital I/O (DIO) connections are made to IR sensors,
@@ -1047,9 +1048,9 @@ class Robot : public frc::TimedRobot {
                    ( ( sCurrState.iLSMasterPosition - iLSStartPosition ) +
                      ( sCurrState.iRSMasterPosition - iRSStartPosition ) ) / 2;
             // Convert encoder ticks to feet, using the diameter of the wheels,
-            // the number of ticks/revolution, and the number of inches/foot.
-      dDistanceDriven = iDistanceDriven * 3.1415 * 8.0 / 4096.0 / 12.0;
-                                         // if we haven't driven far enough yet
+            // the number of ticks/revolution, and the number of inc
+            // if we haven't driven far enough yet inches/foot.
+      dDistanceDriven = iDistanceDriven * 3.1415 * 8.0 / 4096.0 / 12.0; 
       if ( std::abs( dDistanceDriven ) < std::abs( desiredDistance ) ) {
          if ( 0.0 < desiredDistance ) {             // If we're driving forward
                                       // and still have more than 10 feet to go
@@ -1108,6 +1109,34 @@ class Robot : public frc::TimedRobot {
       return bReturnValue;
    }  // DriveToDistance()
 
+      //create FollowWall function
+
+   void FollowWall(double distLeft, double distRight, double desiredYaw){
+      double      wallDistance;
+      double      currentYaw = sCurrState.yawPitchRoll[0];
+      double      prevYaw    = sPrevState.yawPitchRoll[0];
+
+      if ( 6.0 < distLeft ){ //left side wall
+         wallDistance = distSensor0.GetVoltage() * 100 / 2.54;
+         if (wallDistance < distLeft){ //too close to wall
+            DriveToDistance (currentYaw - 20.0, 1.0, true);//turn away using desiredYaw
+         }else if (distLeft < wallDistance){ //too far from wall
+            DriveToDistance (currentYaw + 20.0, 1.0, true);//turn to wall using desiredYaw
+         }else { //right distance from wall
+            //maintain speed/heading
+          }
+      }else{ //Right side wall
+         wallDistance = distSensor1.GetVoltage() * 100 / 2.54;
+         if (wallDistance < distRight){ //too close to wall
+            DriveToDistance (currentYaw + 20.0, 1.0, true);//turn away using desiredYaw
+         }else if (distRight < wallDistance){ //too far from wall
+            DriveToDistance (currentYaw - 20.0, 1.0, true);//turn to wall using desiredYaw
+         }else { //right distance from wall
+            //maintain speed/heading
+          }  
+       }  
+     
+   }
 
          /*------------------------------------------------------------------*/
          /* RunShooter()                                                     */
@@ -1619,10 +1648,10 @@ class Robot : public frc::TimedRobot {
    void TestPeriodic() override {
       GetAllVariables();
       iCallCount++;
-
+      FollowWall(23.0, 0.0, 0.0);
       SwitchCameraIfNecessary();
 
-      if ( 0 == iCallCount%10000 ) {                           // every 200 seconds
+      if ( 0 == iCallCount%100 ) {                           // every 2 seconds
          // cout << "Sonar0 sensor 0: " << distSensor0.GetAverageValue() << endl;
          // cout << "Sonar0 average voltage:  " << distSensor0.GetAverageVoltage()
          //      << endl;
@@ -1630,6 +1659,8 @@ class Robot : public frc::TimedRobot {
              // convert to inches, with 100 centimeters/volt and 2.54 cm/inch
          cout << "Sonar0 distance: " << distSensor0.GetVoltage() * 100 / 2.54
               << " inches (" << distSensor0.GetVoltage() << ")." << endl; 
+         cout << "Sonar1 distance: " << distSensor1.GetVoltage() * 100 / 2.54
+              << " inches (" << distSensor1.GetVoltage() << ")." << endl; 
       }
 
       if ( 0 == iCallCount%100 )  {   // every 2 seconds
@@ -1701,9 +1732,10 @@ class Robot : public frc::TimedRobot {
                m_motorLSMaster.SetIntegralAccumulator( 0.0 );
                m_motorRSMaster.SetIntegralAccumulator( 0.0 );
             }
-         } else if ( 0 && sCurrState.conButton[11]) {
-               iCallCount = 1000;
-         } else {
+         } //else if ( 0 && sCurrState.conButton[11]) {
+               //iCallCount = 1000;
+        // }
+          else {
             sCurrState.conY = 1.0;   // Tell RunShooter() to go to low speed
             sPrevState.conY = 0.0;   // as if console joystick was
 	                             // newly-pressed downward.
@@ -1755,19 +1787,19 @@ class Robot : public frc::TimedRobot {
                                                        // go backward 2 feet
          Team4918Drive( 0.1, 0.0 );           // change to DriveToDistance()
 		                              // when the Pigeon is connected.
-      } else if ( iCallCount<1100 && 0 == state) {
-               if (DriveToDistance(sCurrState.initialYaw, 2.5, false)){
-                  state = 1;
-                  iCallCount = 1100; 
-               }
-      } else if (iCallCount < 1200 && 1 == state){
+      //} else if ( iCallCount<1100 && 0 == state) {
+              // if (DriveToDistance(sCurrState.initialYaw, 2.5, false)){
+                  //state = 1;
+                  //iCallCount = 1100; 
+              // }
+      //} else if (iCallCount < 1200 && 1 == state){
 
-               if (powercellOnVideo.SeenByCamera){
-                  DriveToPowercell();
+               //if (powercellOnVideo.SeenByCamera){
+                  //DriveToPowercell();
                
 
 
-               }
+               //}
       } else {
          Team4918Drive( 0.0, 0.0 );
          sCurrState.conY = 0.0;   // Tell RunShooter() to stop
