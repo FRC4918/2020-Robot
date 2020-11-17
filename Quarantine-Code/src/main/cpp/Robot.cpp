@@ -1111,27 +1111,38 @@ class Robot : public frc::TimedRobot {
 
       //create FollowWall function
 
-   void FollowWall(double distLeft, double distRight, double desiredYaw){
+   void FollowWall(double distLeft, double distRight, double straight, double turnTo, double turnAway){
       double      wallDistance;
       double      currentYaw = sCurrState.yawPitchRoll[0];
       double      prevYaw    = sPrevState.yawPitchRoll[0];
+      
 
       if ( 6.0 < distLeft ){ //left side wall
          wallDistance = distSensor0.GetVoltage() * 100 / 2.54;
-         if (wallDistance < distLeft){ //too close to wall
-            DriveToDistance (currentYaw - 20.0, 1.0, true);//turn away using desiredYaw
-         }else if (distLeft < wallDistance){ //too far from wall
-            DriveToDistance (currentYaw + 20.0, 1.0, true);//turn to wall using desiredYaw
-         }else { //right distance from wall
-            //maintain speed/heading
+         if (wallDistance < distLeft - 1.0){ //too close to wall
+            DriveToDistance (turnAway, 1.0, true);//turn away
+            if ( 0 == iCallCount%1 ){
+               printf( "right %f\n", currentYaw);
+            }
+         }else if (distLeft + 1.0 < wallDistance){ //too far from wall
+            DriveToDistance (turnTo, 1.0, true);//turn to wall
+            if ( 0 == iCallCount%25 ){
+               printf("left %f\n", currentYaw);
+            }
+         }else  {//right distance from wall
+            DriveToDistance (straight, 1.0, true);//maintain speed/heading
+            if ( 0 == iCallCount%25 ){
+               printf("straight %f\n", currentYaw);
+            }
           }
       }else{ //Right side wall
          wallDistance = distSensor1.GetVoltage() * 100 / 2.54;
-         if (wallDistance < distRight){ //too close to wall
-            DriveToDistance (currentYaw + 20.0, 1.0, true);//turn away using desiredYaw
-         }else if (distRight < wallDistance){ //too far from wall
-            DriveToDistance (currentYaw - 20.0, 1.0, true);//turn to wall using desiredYaw
+         if (wallDistance < distRight + 1.0){ //too close to wall
+            DriveToDistance (turnAway, 1.0, true);//turn away
+         }else if (distRight - 1.0 < wallDistance){ //too far from wall
+            DriveToDistance (turnTo, 1.0, true);//turn to wall
          }else { //right distance from wall
+            DriveToDistance (straight, 1.0, true);
             //maintain speed/heading
           }  
        }  
@@ -1648,7 +1659,13 @@ class Robot : public frc::TimedRobot {
    void TestPeriodic() override {
       GetAllVariables();
       iCallCount++;
-      FollowWall(23.0, 0.0, 0.0);
+      #if 1 
+      //follow left wall
+      FollowWall(23.0, 0.0, 0.0, 35.0, -25.0); //pigeon units in trig directions not compas directions
+      #else
+      //follow right wall
+      //FollowWall(0.0, 23.0, 0.0, -35.0, 35.0 );
+      #endif
       SwitchCameraIfNecessary();
 
       if ( 0 == iCallCount%100 ) {                           // every 2 seconds
