@@ -1045,7 +1045,7 @@ class Robot : public frc::TimedRobot {
          iRSStartPosition = sCurrState.iRSMasterPosition;
       }
       iDistanceDriven =
-                   ( ( sCurrState.iLSMasterPosition - iLSStartPosition ) +
+                   ( - ( sCurrState.iLSMasterPosition - iLSStartPosition ) +
                      ( sCurrState.iRSMasterPosition - iRSStartPosition ) ) / 2;
             // Convert encoder ticks to feet, using the diameter of the wheels,
             // the number of ticks/revolution, and the number of inc
@@ -1092,6 +1092,7 @@ class Robot : public frc::TimedRobot {
                     sCurrState.yawPitchRoll[0] << 
                     "/" << desiredYaw << " " <<
                     " " << dDesiredTurn << endl;
+            cout << "dDistanceDriven: " << dDistanceDriven << sCurrState.iLSMasterPosition << sCurrState.iRSMasterPosition << endl;
          }
       } else {
          Team4918Drive( 0.0, 0.0 );   // stop the robot
@@ -1101,7 +1102,7 @@ class Robot : public frc::TimedRobot {
       }
 
       if ( bReturnValue ) {
-         cout << "DriveToDistance() returning TRUE!!!!!!!!!" << endl;
+         cout << "DriveToDistance() returning TRUE!!!!!!!!" << endl;
          cout << "Final Distance: " <<  dDistanceDriven << endl;
          cout << " Final Yaw: " <<  sCurrState.yawPitchRoll[0] << endl;
       }
@@ -1391,7 +1392,7 @@ class Robot : public frc::TimedRobot {
           /* Config to stop motor immediately when limit switch is closed. */
                                                    // if encoder is connected
       if ( OK == m_motor.ConfigSelectedFeedbackSensor(
-                          FeedbackDevice::CTRE_MagEncoder_Relative, 0, 10 ) ) {
+                     FeedbackDevice::CTRE_MagEncoder_Relative, 0, 10 ) ) {
          m_motor.ConfigForwardLimitSwitchSource(
                      LimitSwitchSource::LimitSwitchSource_FeedbackConnector,
                      LimitSwitchNormal::LimitSwitchNormal_NormallyOpen );
@@ -1710,7 +1711,7 @@ class Robot : public frc::TimedRobot {
       RSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
       Team4918Drive( 0.0, 0.0 );          // make sure drive motors are stopped
 
-      DriveToDistance (sCurrState.initialYaw, 0.0, true);
+      DriveToDistance (sCurrState.initialYaw, 3.0, true);
    }      // AutonomousInit()
 
 
@@ -1740,7 +1741,32 @@ class Robot : public frc::TimedRobot {
       RSMotorState.targetVelocity_UnitsPer100ms = 0;        // Right Side drive
 
       // dDesiredYaw = sCurrState.initialYaw;
-
+      if (iCallCount<200){
+         if (DriveToDistance(sCurrState.initialYaw, 3.0, false)){
+            cout << "CHANGE 200 " << iCallCount << endl;
+            iCallCount = 200;
+         }
+      }else if (iCallCount<700){
+         Team4918Drive(0.3,-0.24);  //measured this with 0.4/-0.3, turns left with a radius of 14"
+         if (1 == iCallCount%50){
+         cout << "Final yaw: " <<  sCurrState.yawPitchRoll[0] << endl;//with 0.3,-0.24, radius of 12"
+         }if (sCurrState.initialYaw+360.0<sCurrState.yawPitchRoll[0]){ //left turn increase the angle(like trig, not like a compas)
+         cout << "CHANGE 700 " << iCallCount << endl;
+         iCallCount = 700;
+         sCurrState.initialYaw += 360.0;
+         DriveToDistance(sCurrState.initialYaw, 3.0, true);
+         }
+      }else if (iCallCount<900){
+         DriveToDistance(sCurrState.initialYaw, 3.0, true);
+         cout << "CHANGE 900 " << iCallCount << endl;
+         iCallCount = 900;
+      }else{
+         Team4918Drive(0.0,0.0);
+        
+      }
+      
+      return; 
+      
       if (iCallCount<200) {
          if ( 0 && sCurrState.conButton[10]){
             if ( TurnToHeading( sCurrState.initialYaw+270.0, false ) ) {
