@@ -119,20 +119,51 @@ class Robot : public frc::TimedRobot {
      //                          distance      yaw (heading)
      // index command             (feet)   (degrees, positive left)
      // ----- ----------------     ----    -------
+      {   0,  M_DRIVE_STRAIGHT,     5.0,       0.0 },
+      {   1,  M_TURN_RIGHT,         0.0,     -26.0 },
+      {   2,  M_DRIVE_STRAIGHT,     5.5,     -26.0 },
+      {   3,  M_TURN_LEFT,          0.0,      70.0 },
+      {   4,  M_DRIVE_STRAIGHT,     4.5,      70.0 },
+      {   5,  M_ROTATE,             0.0,       0.0 },
+      {   6,  M_DRIVE_STRAIGHT,    11.0,       0.0 },
+      {   7,  M_STOP,               0.0,       0.0 },
+      {   8,  M_TERMINATE_SEQ,      0.0,       0.0 },
+
       {   0,  M_STOP,               0.0,       0.0 },
       {   1,  M_STOP,               0.0,       0.0 },
-      {   2,  M_DRIVE_STRAIGHT,     3.0,       0.0 },
-      {   3,  M_TURN_LEFT,          0.0,     360.0 },
-      {   4,  M_DRIVE_STRAIGHT,     3.0,     360.0 },
-      {   5,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {   6,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {   7,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {   8,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {   9,  M_TURN_RIGHT,         0.0,       0.0 },
-      {  10,  M_ROTATE,             0.0,     360.0 },
-      {  11,  M_ROTATE,             0.0,       0.0 },
-      {  12,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {  13,  M_TERMINATE_SEQ,      0.0,       0.0 },
+      {   2,  M_DRIVE_STRAIGHT,     2.0,       0.0 },
+      {   3,  M_TURN_LEFT,          0.0,      90.0 },
+      {   4,  M_DRIVE_STRAIGHT,     3.0,      90.0 },
+      {   5,  M_DRIVE_STRAIGHT,    -3.0,      90.0 },
+      {   6,  M_ROTATE,             0.0,     -20.0 },
+      {   7,  M_DRIVE_STRAIGHT,     6.0,     -60.0 },
+      {   8,  M_TURN_LEFT,          0.0,      90.0 },
+      {   9,  M_DRIVE_STRAIGHT,     4.0,      90.0 },
+      {  10,  M_STOP,               0.0,       0.0 },
+      {  11,  M_TERMINATE_SEQ,      0.0,       0.0 },
+
+
+      {  51,  M_DRIVE_STRAIGHT,     5.0,       0.0 },
+      {  52,  M_TURN_RIGHT,         0.0,     -26.0 },
+      {  53,  M_DRIVE_STRAIGHT,     5.5,     -26.0 },
+      {  54,  M_TURN_LEFT,          0.0,      70.0 },
+      {  55,  M_DRIVE_STRAIGHT,     5.5,      70.0 },
+      {  66,  M_ROTATE,             0.0,       0.0 },
+      {  57,  M_DRIVE_STRAIGHT,    11.0,       0.0 },
+      {  58,  M_STOP,               0.0,       0.0 },
+      {  59,  M_TERMINATE_SEQ,      0.0,       0.0 },
+
+      {  58,  M_TURN_LEFT,          0.0,     360.0 },
+      {  59,  M_DRIVE_STRAIGHT,    10.0,     360.0 },
+      {  60,  M_TERMINATE_SEQ,      0.0,       0.0 },
+      {  61,  M_TERMINATE_SEQ,      0.0,       0.0 },
+      {  62,  M_TERMINATE_SEQ,      0.0,       0.0 },
+      {  63,  M_TERMINATE_SEQ,      0.0,       0.0 },
+      {  64,  M_TURN_RIGHT,         0.0,       0.0 },
+      {  65,  M_ROTATE,             0.0,     360.0 },
+      {  66,  M_ROTATE,             0.0,       0.0 },
+      {  67,  M_TERMINATE_SEQ,      0.0,       0.0 },
+      {  68,  M_TERMINATE_SEQ,      0.0,       0.0 },
    };
 
 
@@ -159,6 +190,7 @@ class Robot : public frc::TimedRobot {
       bool   powercellInIntake;
       bool   powercellInPosition5;
       bool   highGear;
+      bool   teleop;
    } sCurrState, sPrevState;
 
    struct sMotorState {
@@ -734,14 +766,14 @@ class Robot : public frc::TimedRobot {
 	     // jag; 22mar2021: all these values have been changed; it may be
 	     // useful to compare with the original working code in
 	     // ~/Desktop/2020-Robot/Robot.cpp
-         if        ( powercellOnVideo.Y < -50 ) {  // if we're super close
-            autoDriveSpeed = -0.35;   //   go backward slowly
-         } else if ( powercellOnVideo.Y < -30 ) {  // if we're super close
-            autoDriveSpeed = -0.25;   //   go backward slowly
-            autoDriveSpeed = -0.35 * float( - 30 - powercellOnVideo.Y ) / 20.0;
-         } else if ( powercellOnVideo.Y < 0 )   { // if we're really close...
-            autoDriveSpeed = 0.0;     //   stop (or 0.08 to go slow)
-         } else if ( powercellOnVideo.Y <  20 ) {  // if we're a little farther
+//         if        ( powercellOnVideo.Y < -50 ) {  // if we're super close
+//            autoDriveSpeed = -0.35;   //   go backward slowly
+//         } else if ( powercellOnVideo.Y < -30 ) {  // if we're super close
+//            autoDriveSpeed = -0.25;   //   go backward slowly
+//            autoDriveSpeed = -0.35 * float( - 30 - powercellOnVideo.Y ) / 20.0;
+//         } else if ( powercellOnVideo.Y < 0 )   { // if we're really close...
+//            autoDriveSpeed = 0.0;     //   stop (or 0.08 to go slow)
+         /* } else */ if ( powercellOnVideo.Y <  20 ) {  // if we're a little farther
             autoDriveSpeed = 0.15;    //   go a little faster
             autoDriveSpeed = 0.20 * float( powercellOnVideo.Y ) / 20.0;
          } else if (  powercellOnVideo.Y < 40 ) {  // if we're farther still...
@@ -833,7 +865,7 @@ class Robot : public frc::TimedRobot {
       motorFindMinMaxVelocity( m_motorLSMaster, LSMotorState );
       motorFindMinMaxVelocity( m_motorRSMaster, RSMotorState );
 
-#ifdef JAG_NOTDEFINED
+    if ( sCurrState.teleop ) {
       if (sCurrState.joyButton[1]) { //when button 1 is pressed, shift into high gear until released
          sCurrState.highGear = true;
          m_shiftingSolenoid.Set( true );
@@ -841,7 +873,7 @@ class Robot : public frc::TimedRobot {
          sCurrState.highGear = false;
          m_shiftingSolenoid.Set( false );
       }
-#else
+    } else {
       if ( ( 15000 < abs(LSMotorState.sensorVmin) ) &&
            ( 15000 < abs(RSMotorState.sensorVmin) )    ) {
          if (!sCurrState.highGear){
@@ -857,7 +889,7 @@ class Robot : public frc::TimedRobot {
          sCurrState.highGear = false; // could move inside if statement
          m_shiftingSolenoid.Set( false );    // low gear got 2800/2700
       } 
-#endif
+    } 
 
       if ( 0 == iCallCount%100 )  {   // every 2 seconds
          // JoystickDisplay();
@@ -1173,8 +1205,8 @@ class Robot : public frc::TimedRobot {
 //   Stage
 
       dDistanceDriven = 3.1415 * 8.0 / 4096.0 / 12.0 *
-                        ( (double)iTotalTicksHighGear / 18.75 +
-                          (double)iTotalTicksLowGear  /  7.08   );
+                        ( (double)iTotalTicksHighGear / 13.50 +
+                          (double)iTotalTicksLowGear  / 13.50   );
 
                                          // if we haven't driven far enough yet
       if ( std::abs( dDistanceDriven ) < std::abs( desiredDistance ) ) {
@@ -1184,7 +1216,7 @@ class Robot : public frc::TimedRobot {
                dDesiredSpeed = 1.0;                            // go full speed
             } else {
                    // Otherwise speed is proportional to distance still needed.
-               dDesiredSpeed = 0.1 +
+               dDesiredSpeed = 0.2 +
 		                  ( desiredDistance - dDistanceDriven ) / 10.0;
             }
          } else {                               // else we're driving backwards
@@ -1193,7 +1225,7 @@ class Robot : public frc::TimedRobot {
                dDesiredSpeed = -1.0;               // go full speed (backwards)
             } else {
                    // Otherwise speed is proportional to distance still needed.
-               dDesiredSpeed = -0.1 +
+               dDesiredSpeed = -0.2 +
                                   ( desiredDistance - dDistanceDriven ) / 10.0;
             }
          }
@@ -1641,8 +1673,8 @@ class Robot : public frc::TimedRobot {
       m_motor.ConfigMotionAcceleration(   1500, 10 );
 
                /* Set ramp rate (how fast motor accelerates or decelerates) */
-      m_motor.ConfigClosedloopRamp(0.0);
-      m_motor.ConfigOpenloopRamp(  0.0);
+      m_motor.ConfigClosedloopRamp(0.1);
+      m_motor.ConfigOpenloopRamp(  0.1);
 
       m_motor.SetNeutralMode( NeutralMode::Coast );
 
@@ -1685,7 +1717,8 @@ class Robot : public frc::TimedRobot {
                    // Drive straight at the specified yaw angle for a specified
                    // distance.  The DriveToDistance() function returns true
                    // when it has driven far enough.
-         bRetVal = DriveToDistance( mSeq.yaw, mSeq.distance, false );
+         bRetVal = DriveToDistance( sCurrState.initialYaw + mSeq.yaw,
+			            mSeq.distance, false );
 				  // If we have driven far enough...
 	 if ( bRetVal ) {
             cout << "EM: DriveToDistance completed, heading: ";
@@ -1728,7 +1761,8 @@ class Robot : public frc::TimedRobot {
                      // Rotate in place until reaching the specified yaw angle.
                      // The TurnToHeading() function returns true when it has
                      // rotated far enough.
-         bRetVal = TurnToHeading( mSeq.yaw, false );
+         bRetVal = TurnToHeading( sCurrState.initialYaw + mSeq.yaw,
+			          false );
 				  // If we have rotated far enough...
 	 if ( bRetVal ) {
             cout << "EM: Rotation completed, heading: ";
@@ -1933,6 +1967,7 @@ class Robot : public frc::TimedRobot {
       sCurrState.highGear = false;
       m_shiftingSolenoid.Set(false);
       iCallCount++;
+      sCurrState.teleop = false;
    }      // RobotInit()
 
 
@@ -2244,6 +2279,7 @@ class Robot : public frc::TimedRobot {
       m_motorRSMaster.SetIntegralAccumulator( 0.0 );
       LSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
       RSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
+      sCurrState.teleop = true;
       Team4918Drive( 0.0, 0.0 );          // make sure drive motors are stopped
    }      // TeleopInit()
 
@@ -2273,7 +2309,7 @@ class Robot : public frc::TimedRobot {
 
       RunDriveMotors();
 
-      RunShooter();
+      // RunShooter();
 
       Shoot();
 
