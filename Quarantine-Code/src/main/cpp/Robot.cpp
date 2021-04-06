@@ -103,6 +103,8 @@ class Robot : public frc::TimedRobot {
       enum MANEUVER_TYPE type;       // type of maneuver (stop, turn, etc.)
       double             distance;   // distance in feet
       double             yaw;        // yaw angle in degrees
+      bool               bDivertToPcell;  // if true, divert to a powercell
+                                          // if one is seen by the videocamera
    };
 
    int mSeqIndex = 0;
@@ -116,54 +118,154 @@ class Robot : public frc::TimedRobot {
      // headings are absolute, from the initial yaw when AutonomousInit()
      // was called and sCurrState.initialYaw was set.
      //
-     //                          distance      yaw (heading)
-     // index command             (feet)   (degrees, positive left)
-     // ----- ----------------     ----    -------
-      {   0,  M_DRIVE_STRAIGHT,     5.0,       0.0 },
-      {   1,  M_TURN_RIGHT,         0.0,     -26.0 },
-      {   2,  M_DRIVE_STRAIGHT,     5.5,     -26.0 },
-      {   3,  M_TURN_LEFT,          0.0,      70.0 },
-      {   4,  M_DRIVE_STRAIGHT,     4.5,      70.0 },
-      {   5,  M_ROTATE,             0.0,       0.0 },
-      {   6,  M_DRIVE_STRAIGHT,    11.0,       0.0 },
-      {   7,  M_STOP,               0.0,       0.0 },
-      {   8,  M_TERMINATE_SEQ,      0.0,       0.0 },
+     //                                    yaw (heading)    divert
+     //                          distance  (degrees,          to
+     // index command             (feet)    positive left)  powercell?
+     // ----- ----------------     ----     --------        -----
+      {   0,  M_DRIVE_STRAIGHT,     5.0,       0.0,         false },
+      {   1,  M_TURN_RIGHT,         0.0,     -26.0,         false },
+      {   2,  M_DRIVE_STRAIGHT,     5.5,     -26.0,         true  },
+      {   3,  M_TURN_LEFT,          0.0,      70.0,         false },
+      {   4,  M_DRIVE_STRAIGHT,     4.5,      70.0,         true  },
+      {   5,  M_ROTATE,             0.0,       0.0,         false },
+      {   6,  M_DRIVE_STRAIGHT,    11.0,       0.0,         false },
+      {   7,  M_STOP,               0.0,       0.0,         false },
+      {   8,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {   9,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
 
-      {   0,  M_STOP,               0.0,       0.0 },
-      {   1,  M_STOP,               0.0,       0.0 },
-      {   2,  M_DRIVE_STRAIGHT,     2.0,       0.0 },
-      {   3,  M_TURN_LEFT,          0.0,      90.0 },
-      {   4,  M_DRIVE_STRAIGHT,     3.0,      90.0 },
-      {   5,  M_DRIVE_STRAIGHT,    -3.0,      90.0 },
-      {   6,  M_ROTATE,             0.0,     -20.0 },
-      {   7,  M_DRIVE_STRAIGHT,     6.0,     -60.0 },
-      {   8,  M_TURN_LEFT,          0.0,      90.0 },
-      {   9,  M_DRIVE_STRAIGHT,     4.0,      90.0 },
-      {  10,  M_STOP,               0.0,       0.0 },
-      {  11,  M_TERMINATE_SEQ,      0.0,       0.0 },
+      // index 10:
+      {  10,  M_STOP,               0.0,       0.0,         false },
+      {  11,  M_STOP,               0.0,       0.0,         false },
+      {  12,  M_DRIVE_STRAIGHT,     2.0,       0.0,         false },
+      {  13,  M_TURN_LEFT,          0.0,      90.0,         false },
+      {  14,  M_DRIVE_STRAIGHT,     3.0,      90.0,         false },
+      {  15,  M_DRIVE_STRAIGHT,    -3.0,      90.0,         false },
+      {  16,  M_ROTATE,             0.0,     -20.0,         false },
+      {  17,  M_DRIVE_STRAIGHT,     6.0,     -60.0,         false },
+      {  18,  M_TURN_LEFT,          0.0,      90.0,         false },
+      {  19,  M_DRIVE_STRAIGHT,     4.0,      90.0,         false },
+      {  20,  M_STOP,               0.0,       0.0,         false },
+      {  21,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  22,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  23,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  24,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  25,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  26,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  27,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  28,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  29,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
 
+      // index 30:
+      {  30,  M_DRIVE_STRAIGHT,     5.0,       0.0,         false },
+      {  31,  M_TURN_RIGHT,         0.0,     -26.0,         false },
+      {  32,  M_DRIVE_STRAIGHT,     5.5,     -26.0,         false },
+      {  33,  M_TURN_LEFT,          0.0,      70.0,         false },
+      {  34,  M_DRIVE_STRAIGHT,     5.5,      70.0,         false },
+      {  35,  M_ROTATE,             0.0,       0.0,         false },
+      {  36,  M_DRIVE_STRAIGHT,    11.0,       0.0,         false },
+      {  37,  M_STOP,               0.0,       0.0,         false },
+      {  38,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  39,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
 
-      {  51,  M_DRIVE_STRAIGHT,     5.0,       0.0 },
-      {  52,  M_TURN_RIGHT,         0.0,     -26.0 },
-      {  53,  M_DRIVE_STRAIGHT,     5.5,     -26.0 },
-      {  54,  M_TURN_LEFT,          0.0,      70.0 },
-      {  55,  M_DRIVE_STRAIGHT,     5.5,      70.0 },
-      {  66,  M_ROTATE,             0.0,       0.0 },
-      {  57,  M_DRIVE_STRAIGHT,    11.0,       0.0 },
-      {  58,  M_STOP,               0.0,       0.0 },
-      {  59,  M_TERMINATE_SEQ,      0.0,       0.0 },
+      // index 40:
+      {  40,  M_TURN_LEFT,          0.0,     360.0,         false },
+      {  41,  M_DRIVE_STRAIGHT,    10.0,     360.0,         false },
+      {  42,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  43,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  44,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  45,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  46,  M_TURN_RIGHT,         0.0,       0.0,         false },
+      {  47,  M_ROTATE,             0.0,     360.0,         false },
+      {  48,  M_ROTATE,             0.0,       0.0,         false },
+      {  49,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  50,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  51,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  52,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  53,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  54,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  55,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  56,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  57,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  58,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  59,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
 
-      {  58,  M_TURN_LEFT,          0.0,     360.0 },
-      {  59,  M_DRIVE_STRAIGHT,    10.0,     360.0 },
-      {  60,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {  61,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {  62,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {  63,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {  64,  M_TURN_RIGHT,         0.0,       0.0 },
-      {  65,  M_ROTATE,             0.0,     360.0 },
-      {  66,  M_ROTATE,             0.0,       0.0 },
-      {  67,  M_TERMINATE_SEQ,      0.0,       0.0 },
-      {  68,  M_TERMINATE_SEQ,      0.0,       0.0 },
+      // index 60: (barrel)
+      {  60,  M_STOP,               0.0,       0.0,         false },
+      {  61,  M_DRIVE_STRAIGHT,     7.5,       0.0,         false },
+      {  62,  M_TURN_RIGHT,         0.0,    -360.0,         false },
+      {  63,  M_DRIVE_STRAIGHT,     7.5,    -360.0,         false },
+      {  64,  M_TURN_LEFT,          0.0,      45.0,         false },
+      {  65,  M_DRIVE_STRAIGHT,     7.0,      45.0,         false },
+      {  66,  M_TURN_LEFT,          0.0,    -180.0,         false },
+      {  67,  M_DRIVE_STRAIGHT,    20.0,    -180.0,         false },
+      {  68,  M_STOP,               0.0,       0.0,         false },
+      {  69,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  70,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  71,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  72,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  73,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  74,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  75,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  76,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  77,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  78,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  79,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+
+      // index 80: (slalom)
+      {  80,  M_STOP,               0.0,       0.0,         false },
+      {  81,  M_TURN_LEFT,          0.0,      90.0,         false },
+      {  82,  M_DRIVE_STRAIGHT,     2.0,      90.0,         false },
+      {  83,  M_TURN_RIGHT,         0.0,       0.0,         false },
+      {  84,  M_DRIVE_STRAIGHT,    10.0,       0.0,         false },
+      {  85,  M_TURN_RIGHT,         0.0,     -90.0,         false },
+      {  86,  M_TURN_LEFT,          0.0,     270.0,         false },
+      {  87,  M_TURN_RIGHT,         0.0,     180.0,         false },
+      {  88,  M_DRIVE_STRAIGHT,    10.0,     180.0,         false },
+      {  89,  M_TURN_RIGHT,         0.0,      90.0,         false },
+      {  90,  M_TURN_LEFT,          0.0,     180.0,         false },
+      {  91,  M_DRIVE_STRAIGHT,     2.0,     180.0,         false },
+      {  92,  M_STOP,               0.0,       0.0,         false },
+      {  93,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  94,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  95,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  96,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  97,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  98,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {  99,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+
+      // index 100: (bounce)
+      { 100,  M_STOP,               0.0,       0.0,         false },
+      { 101,  M_STOP,               0.0,       0.0,         false },
+      { 102,  M_DRIVE_STRAIGHT,     2.0,       0.0,         false },
+      { 103,  M_TURN_LEFT,          0.0,      80.0,         false },
+      { 104,  M_DRIVE_STRAIGHT,     2.0,      90.0,         false },
+      { 105,  M_DRIVE_STRAIGHT,    -2.0,      90.0,         false },
+      { 106,  M_TURN_LEFT,         -1.0,     120.0,         false },
+      { 107,  M_DRIVE_STRAIGHT,    -6.0,     120.0,         false },
+      { 108,  M_TURN_LEFT,         -1.0,     180.0,         false },
+      { 109,  M_DRIVE_STRAIGHT,    -0.5,     180.0,         false },
+      { 110,  M_TURN_LEFT,         -1.0,     260.0,         false },
+      { 111,  M_DRIVE_STRAIGHT,    -8.0,     270.0,         false },
+      { 112,  M_DRIVE_STRAIGHT,     7.0,     270.0,         false },
+      { 113,  M_TURN_LEFT,          1.0,     350.0,         false },
+      { 114,  M_DRIVE_STRAIGHT,     3.5,     360.0,         false },
+      { 115,  M_TURN_LEFT,          1.0,     430.0,         false },
+      { 116,  M_DRIVE_STRAIGHT,     7.0,     450.0,         false },
+      { 118,  M_TURN_LEFT,         -1.0,     480.0,         false },
+      { 119,  M_DRIVE_STRAIGHT,    -3.0,     490.0,         false },
+      { 120,  M_STOP,               0.0,       0.0,         false },
+      { 121,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 122,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 123,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 124,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 125,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 126,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 127,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 128,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 129,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 130,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      { 131,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+
    };
 
 
@@ -277,8 +379,11 @@ class Robot : public frc::TimedRobot {
          /* of the environment as well as the surface of the object.         */
       // int     lowH = 19;       // Set Hue
       // int     highH = 37;      // (orig: 30)  
-      int     lowH = 14;       // Set Hue
-      int     highH = 34;      // (orig: 30)  
+      // int     lowH = 14;       // Set Hue
+      // int     lowH = 20;       // Set Hue
+      // int     highH = 34;      // (orig: 30)  
+      int     lowH = 25;       // Set Hue
+      int     highH = 65;      // (orig: 30)  
 
       int     lowS = 0;        // Set Saturation (orig: 200)
       int     highS = 255;
@@ -641,9 +746,13 @@ class Robot : public frc::TimedRobot {
       /* Drive robot according to the commanded Y and X joystick position.   */
       /*---------------------------------------------------------------------*/
    void DriveByJoystick( void ) {
+      double desiredForward;
+      double desiredTurn;
+
          // m_drive.ArcadeDrive( m_stick.GetY(), -m_stick.GetX() );
               // our joystick increases Y when pulled BACKWARDS, and increases
               // X when pushed to the right.
+#ifdef JAG_NOTDEFINED
       if ( sCurrState.joyButton[2] ) {
          Team4918Drive( sCurrState.joyY*abs(sCurrState.joyY),
                         sCurrState.joyX*abs(sCurrState.joyX) );
@@ -653,6 +762,32 @@ class Robot : public frc::TimedRobot {
                          sCurrState.joyX*abs(sCurrState.joyX) );
          // limenttable->PutNumber( "ledMode", 1 );  // turn Limelight LEDs off
       }
+#else
+      //if ( sCurrState.joyButton[2] ) {
+      //   desiredForward = sCurrState.joyY*abs(sCurrState.joyY);
+      //} else {
+      //   desiredForward = -sCurrState.joyY*abs(sCurrState.joyY);
+      //}
+      //desiredTurn = sCurrState.joyX*abs(sCurrState.joyX);
+      desiredForward = sCurrState.joyY;
+      desiredTurn = sCurrState.joyX;
+
+      if ( ( -0.045 < desiredForward ) && ( desiredForward < 0.025 ) ) {
+         desiredForward = 0.0;
+      } else {
+         if ( sCurrState.joyButton[2] ) {
+            desiredForward = sCurrState.joyY*abs(sCurrState.joyY);
+         } else {
+            desiredForward = -sCurrState.joyY*abs(sCurrState.joyY);
+         }
+      }
+      if ( ( -0.105 < desiredTurn ) && ( desiredTurn < 0.025 ) ) {
+         desiredTurn = 0.0;
+      } else {
+         desiredTurn = sCurrState.joyX*abs(sCurrState.joyX);
+      }
+      Team4918Drive( desiredForward, desiredTurn );
+#endif
    }      // DriveByJoystick()
 
 
@@ -807,9 +942,9 @@ class Robot : public frc::TimedRobot {
 
       } else {               // else USB videocamera data is not valid any more
          // should we continue forward here?
-         // m_drive.CurvatureDrive( 0.0, 0, 0 );                 // stop the robot
+         // m_drive.CurvatureDrive( 0.0, 0, 0 );              // stop the robot
          //Team4918Drive( 0.0, 0.0 );
-         DriveByJoystick();     // no powercell seen, drive according to joystick
+         DriveByJoystick();   // no powercell seen, drive according to joystick
          returnVal = false;
       }
 
@@ -1135,17 +1270,23 @@ class Robot : public frc::TimedRobot {
       /* This function drives the robot on a specified heading,              */
       /* to a specified distance.                                            */
       /* desiredYaw is a parameter, in the same degree units as the Pigeon   */
-      /* IMU produces; it is positive for left turns (the same as            */
-      /* trigonometry, but the opposite of ordinary 0-360 degree compass     */
-      /* directions).                                                        */
-      /* desiredDistance is a parameter, in feet.                            */
+      /*    IMU produces; it is positive for left turns (the same as         */
+      /*    trigonometry, but the opposite of ordinary 0-360 degree compass  */
+      /*    directions).                                                     */
+      /* desiredDistance is a parameter, in feet; positive is in the         */
+      /*    "forward" direction (toward the powercell-sucking side of        */
+      /*    the robot).                                                      */
+      /* bDivertToPowercell is a boolean that tells the function to ignore   */
+      /*    the specified heading and drive toward a powercell instead,      */
+      /*    if one is seen by the vision-processing thread.                  */
       /* bInit is a boolean that tells the function to initialize (to record */
-      /* the current position as the starting position).                     */
+      /*    the current position as the starting position).                     */
       /* This function returns false if the distance has not been reached    */
       /* yet, and returns true when the distance has been reached.           */
       /*---------------------------------------------------------------------*/
    bool DriveToDistance( double desiredYaw,
                          double desiredDistance,
+                         bool   bDivertToPowercell,
                          bool   bInit            ) {
       static bool bReturnValue = true;
  //     static int  iLSStartPosition = 0;
@@ -1203,6 +1344,10 @@ class Robot : public frc::TimedRobot {
 // 50 to 34    4.17 : 1   9.01 : 1   4.17 : 1  11.03 : 1   4.17 : 1  15.32 : 1
 // NO 3rd      2.83 : 1   6.13 : 1   2.83 : 1   7.50 : 1   2.83 : 1  10.42 : 1
 //   Stage
+//
+// Measurements with the actual robot indicate that 13.50 is the best ratio,
+// and that seems to be true whether we are in high gear or low gear --
+// so the encoders in the gearbox must be after the high/low change.
 
       dDistanceDriven = 3.1415 * 8.0 / 4096.0 / 12.0 *
                         ( (double)iTotalTicksHighGear / 13.50 +
@@ -1212,7 +1357,7 @@ class Robot : public frc::TimedRobot {
       if ( std::abs( dDistanceDriven ) < std::abs( desiredDistance ) ) {
          if ( 0.0 < desiredDistance ) {             // If we're driving forward
                                       // and still have more than 10 feet to go
-            if ( dDistanceDriven < desiredDistance - 10.0 ) {
+            if ( dDistanceDriven < desiredDistance -  5.0 ) {
                dDesiredSpeed = 1.0;                            // go full speed
             } else {
                    // Otherwise speed is proportional to distance still needed.
@@ -1221,7 +1366,7 @@ class Robot : public frc::TimedRobot {
             }
          } else {                               // else we're driving backwards
                                       // and still have more than 10 feet to go
-            if ( desiredDistance + 10.0 < dDistanceDriven ) {
+            if ( desiredDistance +  5.0 < dDistanceDriven ) {
                dDesiredSpeed = -1.0;               // go full speed (backwards)
             } else {
                    // Otherwise speed is proportional to distance still needed.
@@ -1229,12 +1374,14 @@ class Robot : public frc::TimedRobot {
                                   ( desiredDistance - dDistanceDriven ) / 10.0;
             }
          }
-
+                     // if more than 50 degrees to the right of desired course
          if ( sCurrState.yawPitchRoll[0] < desiredYaw-50.0 ) {
-            dDesiredTurn = -0.2;
+            dDesiredTurn = -0.2;                         // turn left strongly
+                 // else if more than 50 degrees to the left of desired course
          } else if ( desiredYaw+50.0 < sCurrState.yawPitchRoll[0] ) {
-            dDesiredTurn = 0.2;
+            dDesiredTurn = 0.2;                         // turn right strongly
          } else {
+                     // else calculate turn amount based on how far off we are
             dDesiredTurn = (sCurrState.yawPitchRoll[0]-desiredYaw) * 0.2/50.0;
             if ( ( 0.02 < dDesiredTurn ) && ( dDesiredTurn ) < 0.1 ) {
                dDesiredTurn = 0.1;
@@ -1243,7 +1390,50 @@ class Robot : public frc::TimedRobot {
             }
          }
          
-         Team4918Drive( dDesiredSpeed, dDesiredTurn );
+	 if ( !bDivertToPowercell ) { // if we are ignoring powercells (we've
+		                      // been told NOT to divert to powercells)
+            // then just drive (don't change dDesiredxxx values)
+
+                    // else (we've been told to divert to powercells when seen)
+                    // if a powercell is seen
+	 } else if ( powercellOnVideo.SeenByCamera ) {
+                 // Then drive toward the powercell, by setting dDesiredSpeed
+                 // and dDesiredTurn, based on the X,Y coordinates of the
+		 // powercell in the camera view.
+                 // powercellOnVideo.Y is the Y-position in the video frame of
+                 // the powercell; the range is from -120 to +120 (pixels).
+                 // powercellOnVideo.X is the X-position in the video frame of
+                 // the powercell; the range is from -160 to +160 (pixels).
+                 // (0,0) is right in the center of the field of view, with
+                 // X increasing to the right, and Y increasing down towards
+                 // the robot.
+		 // We could use a little math to make the turns a little 
+		 // sharper when the X offset is small, or when the powercell
+                 // is very close to the robot (Y is large).
+
+                                    // The speed should be between 0.1 and 0.3
+            dDesiredSpeed = std::min( (120.0 - powercellOnVideo.Y) / 800.0,
+			              0.1 );
+	    if ( 0.3 < dDesiredSpeed ) {
+               dDesiredSpeed = 0.3;
+            }
+                                    // The turn should be between -0.5 and 0.5
+            if        ( 5 <= powercellOnVideo.X ) {
+               // dDesiredTurn = sqrt(powercellOnVideo.X/300.0) );
+               dDesiredTurn = std::min( (powercellOnVideo.X/300.0), 1.0 );
+            } else if ( powercellOnVideo.X < -5 ) {
+               // dDesiredTurn = -sqrt(-powercellOnVideo.X/300.0) );
+               dDesiredTurn = std::max( (-powercellOnVideo.X/300.0), -1.0 );
+            } else {
+               dDesiredTurn = 0.0;
+            }
+
+	 } else {         // else (we'd divert to a powercell if there was one,
+                          // but no powercell is currently in view)
+            // then just drive (don't change dDesiredxxx values)
+	 }
+
+         Team4918Drive( dDesiredSpeed, dDesiredTurn );    // then just drive
          bReturnValue = false;   // tell caller we are still driving
          if ( 0 == iCallCount%100 ) {                        // Every 2 seconds
             cout << "D2D(): curYaw/desYaw desTurn: " <<
@@ -1282,17 +1472,18 @@ class Robot : public frc::TimedRobot {
       if ( 6.0 < distLeft ){ //left side wall
          wallDistance = distSensor0.GetVoltage() * 100 / 2.54;
          if (wallDistance < distLeft - 1.0){ //too close to wall
-            DriveToDistance (turnAway, 1.0, true);//turn away
+            DriveToDistance (turnAway, 1.0, false, true);//turn away
             if ( 0 == iCallCount%1 ){
                printf( "right %f\n", currentYaw);
             }
          }else if (distLeft + 1.0 < wallDistance){ //too far from wall
-            DriveToDistance (turnTo, 1.0, true);//turn to wall
+            DriveToDistance (turnTo, 1.0, false, true);//turn to wall
             if ( 0 == iCallCount%25 ){
                printf("left %f\n", currentYaw);
             }
          }else  {//right distance from wall
-            DriveToDistance (straight, 1.0, true);//maintain speed/heading
+                                                     // maintain speed/heading
+            DriveToDistance (straight, 1.0, false, true);
             if ( 0 == iCallCount%25 ){
                printf("straight %f\n", currentYaw);
             }
@@ -1300,11 +1491,11 @@ class Robot : public frc::TimedRobot {
       }else{ //Right side wall
          wallDistance = distSensor1.GetVoltage() * 100 / 2.54;
          if (wallDistance < distRight + 1.0){ //too close to wall
-            DriveToDistance (turnAway, 1.0, true);//turn away
+            DriveToDistance (turnAway, 1.0, false, true);//turn away
          }else if (distRight - 1.0 < wallDistance){ //too far from wall
-            DriveToDistance (turnTo, 1.0, true);//turn to wall
+            DriveToDistance (turnTo, 1.0, false, true);//turn to wall
          }else { //right distance from wall
-            DriveToDistance (straight, 1.0, true);
+            DriveToDistance (straight, 1.0, false, true);
             //maintain speed/heading
           }  
        }  
@@ -1325,8 +1516,14 @@ class Robot : public frc::TimedRobot {
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
          if ( !sCurrState.conButton[11] ) {
-	    sCurrState.iConveyPercent = -30;
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
+            if ( ( TSMotorState.targetVelocity_UnitsPer100ms - 100 <
+	           m_motorTopShooter.GetSelectedSensorVelocity() )   &&
+                 ( BSMotorState.targetVelocity_UnitsPer100ms - 100 >
+	           m_motorBotShooter.GetSelectedSensorVelocity() )      )
+            {
+	       sCurrState.iConveyPercent = -30;
+               m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
+            }
          }
       } else if ( !( 0.5 < sCurrState.conY ) &&
                    ( 0.5 < sPrevState.conY ) ) {     // newly-released downward
@@ -1346,8 +1543,14 @@ class Robot : public frc::TimedRobot {
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
          if ( !sCurrState.conButton[11] ) {
-	    sCurrState.iConveyPercent = -30;
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 ); 
+            if ( ( TSMotorState.targetVelocity_UnitsPer100ms - 100 <
+	           m_motorTopShooter.GetSelectedSensorVelocity() )   &&
+                 ( BSMotorState.targetVelocity_UnitsPer100ms - 100 >
+	           m_motorBotShooter.GetSelectedSensorVelocity() )      )
+            {
+	       sCurrState.iConveyPercent = -30;
+               m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 ); 
+            }
          }
       } else if ( !( sCurrState.conY < -0.5 ) &&
                    ( sPrevState.conY < -0.5 ) ) {     // newly-released upward
@@ -1362,11 +1565,24 @@ class Robot : public frc::TimedRobot {
       else if ( ( sCurrState.conX > 0.5 ) &&  //newly pressed rightward
                !( sPrevState.conX > 0.5 ) ) {
          TSMotorState.targetVelocity_UnitsPer100ms =  600 * 4096 / 600;
-         BSMotorState.targetVelocity_UnitsPer100ms = -600 * 4096 / 600;
+         TSMotorState.targetVelocity_UnitsPer100ms =  -1000 * 4096 / 600;
+         // BSMotorState.targetVelocity_UnitsPer100ms = -600 * 4096 / 600;
+         // BSMotorState.targetVelocity_UnitsPer100ms = -3000 * 4096 / 600;
+         BSMotorState.targetVelocity_UnitsPer100ms = -1000 * 4096 / 600;
          m_motorTopShooter.Set( ControlMode::Velocity, 
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
+         if ( !sCurrState.conButton[11] ) {
+            if ( ( TSMotorState.targetVelocity_UnitsPer100ms + 100 >
+	           m_motorTopShooter.GetSelectedSensorVelocity() )   &&
+                 ( BSMotorState.targetVelocity_UnitsPer100ms + 100 >
+	           m_motorBotShooter.GetSelectedSensorVelocity() )      )
+            {
+	       sCurrState.iConveyPercent = -30;
+               m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 ); 
+            }
+         }
       } else if ( !( sCurrState.conX < 0.5 ) && //newly released rightward
                    ( sPrevState.conX < 0.5 ) ) {
          TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
@@ -1394,6 +1610,10 @@ class Robot : public frc::TimedRobot {
          m_motorBotShooter.Set(ControlMode::Velocity,
                0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
       } 
+      if ( 0 == iCallCount%100 )  {   // every 2 seconds
+         MotorDisplay( "TS:", m_motorTopShooter, TSMotorState );
+         MotorDisplay( "BS:", m_motorBotShooter, BSMotorState );
+      }
          
       return true;
    }     // RunShooter()
@@ -1467,10 +1687,17 @@ class Robot : public frc::TimedRobot {
       } else {  
          if ( !(sCurrState.conX > 0.5) && !(sCurrState.conY > 0.5) && 
               !(sCurrState.conY < -0.5) ) {
+            static int ConveyorCounter = 0;
             if ( sCurrState.powercellInIntake &&
               !sCurrState.powercellInPosition5 ) {
 	      sCurrState.iConveyPercent = -30;
               m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
+	      ConveyorCounter = 6;
+            } else if ( ( 0 < ConveyorCounter ) &&
+                        !sCurrState.powercellInPosition5 ) {
+	      sCurrState.iConveyPercent = -30;
+              m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
+	      ConveyorCounter--;
             } else {
             //if (  sPrevState.powercellInIntake && 
             //     !sPrevState.powercellInPosition5 ) {
@@ -1690,7 +1917,7 @@ class Robot : public frc::TimedRobot {
       /*---------------------------------------------------------------------*/
    bool executeManeuver( struct maneuver mSeq ) {
       bool       bRetVal = false;
-      static struct maneuver mSeqPrev = { 0, M_STOP, 0.0, 0.0 };
+      static struct maneuver mSeqPrev = { 0, M_STOP, 0.0, false, 0.0 };
       // static int icmdSeqManeuverCallCount = 0;
 
                    // print debugging info (this code should be removed later)
@@ -1715,10 +1942,15 @@ class Robot : public frc::TimedRobot {
 
       case M_DRIVE_STRAIGHT:
                    // Drive straight at the specified yaw angle for a specified
-                   // distance.  The DriveToDistance() function returns true
+                   // distance, (but if mSeq.bDivertToPcell is TRUE, and
+                   // a powercell is seen by the camera, then drive toward that
+		   // powercell instead).
+                   // The DriveToDistance() function returns true
                    // when it has driven far enough.
          bRetVal = DriveToDistance( sCurrState.initialYaw + mSeq.yaw,
-			            mSeq.distance, false );
+			            mSeq.distance,
+				    mSeq.bDivertToPcell,
+				    false );
 				  // If we have driven far enough...
 	 if ( bRetVal ) {
             cout << "EM: DriveToDistance completed, heading: ";
@@ -1733,7 +1965,14 @@ class Robot : public frc::TimedRobot {
 	        // Tell the drive motors to turn left, with a radius of ~12"
                 // We measured this with 0.4/-0.3, and that turns left with
 		// a radius of 14"
-         Team4918Drive( 0.3, -0.24 );
+		// The "mSeq.distance" parameter is only checked to see if it
+		// is positive or negative, to determine which way to travel
+		// while we are turning.
+         if ( -0.001 < mSeq.distance ) {   // if requested distance is positive
+            Team4918Drive( 0.3, -0.24 );   // turn left while driving forward
+	 } else {                          // else
+            Team4918Drive( -0.3, -0.24 );  // turn left while driving backward
+	 }
                                   // A left turn increases the angle
                  		  // (like in trigonometry, not like a compass)
 				  // If we have turned far enough...
@@ -1746,7 +1985,14 @@ class Robot : public frc::TimedRobot {
 
       case M_TURN_RIGHT:
 	        // Tell the drive motors to turn right, with a radius of ~12"
-         Team4918Drive( 0.3, 0.24 );
+		// The "mSeq.distance" parameter is only checked to see if it
+		// is positive or negative, to determine which way to travel
+		// while we are turning.
+         if ( -0.001 < mSeq.distance ) {   // if requested distance is positive
+            Team4918Drive( 0.3,  0.24 );   // turn right while driving forward
+	 } else {                          // else
+            Team4918Drive( -0.3,  0.24 );  // turn right while driving backward
+	 }
                                   // A right turn decreases the angle
                  		  // (like in trigonometry, not like a compass)
 				  // If we have turned far enough...
@@ -1817,7 +2063,10 @@ class Robot : public frc::TimedRobot {
                                     // if next maneuver is a drive to distance,
 	 if ( M_DRIVE_STRAIGHT == mSeqNext.type ) {
                                     // then initialize the starting point
-            DriveToDistance( mSeqNext.yaw, mSeqNext.distance, true );
+            DriveToDistance( mSeqNext.yaw,
+                             mSeqNext.distance,
+                             mSeqNext.bDivertToPcell,
+                             true );
             // } else if ( M_ROTATE == mSeqNext.type ) {
                       // Else if next maneuver is a rotate, then set the
                       // initial (starting) yaw angle.
@@ -2074,22 +2323,29 @@ class Robot : public frc::TimedRobot {
       GetAllVariables();
       sCurrState.initialYaw = sCurrState.yawPitchRoll[0]; 
       // TurnToHeading( sCurrState.initialYaw, true );
-      // DriveToDistance( sCurrState.initialYaw, 0.0, true );
+      // DriveToDistance( sCurrState.initialYaw, 0.0, false, true );
       m_motorLSMaster.SetSelectedSensorPosition( 0, 0, 10 );
       m_motorRSMaster.SetSelectedSensorPosition( 0, 0, 10 );
       m_motorLSMaster.SetIntegralAccumulator( 0.0 );
       m_motorRSMaster.SetIntegralAccumulator( 0.0 );
+      m_motorLSMaster.ConfigClosedloopRamp(0.1);
+      m_motorRSMaster.ConfigClosedloopRamp(0.1);
+      m_motorLSMaster.ConfigOpenloopRamp(  0.1);
+      m_motorRSMaster.ConfigOpenloopRamp(  0.1);
       LSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
       RSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
       Team4918Drive( 0.0, 0.0 );          // make sure drive motors are stopped
 
       mSeqIndex = 0;         // This can be set to different values, based on
                              // the console switches.
+      // mSeqIndex =  60;       // TEST: barrel
+      // mSeqIndex =  80;       // TEST: slalom
+      mSeqIndex = 100;       // TEST: bounce
 
                              // Initialize yaw and distance, so next maneuvers
 			     // are relative to these current settings.
       TurnToHeading( sCurrState.initialYaw, true );
-      DriveToDistance (sCurrState.initialYaw, 0.0, true);
+      DriveToDistance (sCurrState.initialYaw, 0.0, false, true);
    }      // AutonomousInit()
 
 
@@ -2125,7 +2381,7 @@ class Robot : public frc::TimedRobot {
       // dDesiredYaw = sCurrState.initialYaw;
 #ifdef JAG_NOTDEFINED 
       if (iCallCount<200){
-         if (DriveToDistance(sCurrState.initialYaw, 3.0, false)){
+         if (DriveToDistance(sCurrState.initialYaw, 3.0, false, false)){
             cout << "CHANGE 200 " << iCallCount << endl;
             iCallCount = 200;
          }
@@ -2141,10 +2397,10 @@ class Robot : public frc::TimedRobot {
             cout << "CHANGE 700 " << iCallCount << endl;
             iCallCount = 700;
             sCurrState.initialYaw += 360.0;
-            DriveToDistance(sCurrState.initialYaw, 3.0, true);
+            DriveToDistance(sCurrState.initialYaw, 3.0, false, true);
          }
       }else if (iCallCount<900){
-         DriveToDistance(sCurrState.initialYaw, 3.0, true);
+         DriveToDistance(sCurrState.initialYaw, 3.0, false, true);
          cout << "CHANGE 900 " << iCallCount << endl;
          iCallCount = 900;
       }else{
@@ -2196,7 +2452,7 @@ class Robot : public frc::TimedRobot {
                                                        // go backward 2 feet
          Team4918Drive( 0.2, 0.0 );           // change to DriveToDistance()
 		                              // when the Pigeon is connected.
-  //       if ( DriveToDistance( dDesiredYaw, -2.0, false ) ) {
+  //       if ( DriveToDistance( dDesiredYaw, -2.0, false, false ) ) {
   //          iCallCount = 250;
   //       }
 //         LSMotorState.targetVelocity_UnitsPer100ms = 100.0 * 4096 / 600;
@@ -2226,7 +2482,7 @@ class Robot : public frc::TimedRobot {
          Team4918Drive( 0.1, 0.0 );           // change to DriveToDistance()
 		                              // when the Pigeon is connected.
       //} else if ( iCallCount<1100 && 0 == state) {
-              // if (DriveToDistance(sCurrState.initialYaw, 2.5, false)){
+              // if (DriveToDistance(sCurrState.initialYaw, 2.5, false, false)){
                   //state = 1;
                   //iCallCount = 1100; 
               // }
@@ -2277,6 +2533,10 @@ class Robot : public frc::TimedRobot {
       m_motorRSMaster.SetSelectedSensorPosition( 0, 0, 10 );
       m_motorLSMaster.SetIntegralAccumulator( 0.0 );
       m_motorRSMaster.SetIntegralAccumulator( 0.0 );
+      m_motorLSMaster.ConfigClosedloopRamp(0.0);
+      m_motorRSMaster.ConfigClosedloopRamp(0.0);
+      m_motorLSMaster.ConfigOpenloopRamp(  0.0);
+      m_motorRSMaster.ConfigOpenloopRamp(  0.0);
       LSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
       RSMotorState.targetVelocity_UnitsPer100ms = 0.0 * 4096 / 600;
       sCurrState.teleop = true;
@@ -2309,7 +2569,7 @@ class Robot : public frc::TimedRobot {
 
       RunDriveMotors();
 
-      // RunShooter();
+      RunShooter();
 
       Shoot();
 
