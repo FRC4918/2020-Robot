@@ -191,13 +191,14 @@ class Robot : public frc::TimedRobot {
 
       // index 60: (barrel)
       {  60,  M_STOP,               0.0,       0.0,         false },
-      {  61,  M_DRIVE_STRAIGHT,     7.5,       0.0,         false },
-      {  62,  M_TURN_RIGHT,         0.0,    -360.0,         false },
-      {  63,  M_DRIVE_STRAIGHT,     7.5,    -360.0,         false },
-      {  64,  M_TURN_LEFT,          0.0,      45.0,         false },
-      {  65,  M_DRIVE_STRAIGHT,     7.0,      45.0,         false },
-      {  66,  M_TURN_LEFT,          0.0,    -180.0,         false },
-      {  67,  M_DRIVE_STRAIGHT,    20.0,    -180.0,         false },
+      {  61,  M_DRIVE_STRAIGHT,     4.5,       0.0,         false },
+      {  61,  M_DRIVE_STRAIGHT,     5.0,       0.0,         false },
+      {  62,  M_TURN_RIGHT,         0.0,    -335.0,         false },
+      {  63,  M_DRIVE_STRAIGHT,     8.0,    -340.0,         false },
+      {  64,  M_TURN_LEFT,          0.0,     -60.0,         false },
+      {  65,  M_DRIVE_STRAIGHT,     7.3,     -45.0,         false },
+      {  66,  M_TURN_LEFT,          0.0,     160.0,         false },
+      {  67,  M_DRIVE_STRAIGHT,    22.0,     180.0,         false },
       {  68,  M_STOP,               0.0,       0.0,         false },
       {  69,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
       {  70,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
@@ -1515,16 +1516,6 @@ class Robot : public frc::TimedRobot {
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
-         if ( !sCurrState.conButton[11] ) {
-            if ( ( TSMotorState.targetVelocity_UnitsPer100ms - 100 <
-	           m_motorTopShooter.GetSelectedSensorVelocity() )   &&
-                 ( BSMotorState.targetVelocity_UnitsPer100ms - 100 >
-	           m_motorBotShooter.GetSelectedSensorVelocity() )      )
-            {
-	       sCurrState.iConveyPercent = -30;
-               m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
-            }
-         }
       } else if ( !( 0.5 < sCurrState.conY ) &&
                    ( 0.5 < sPrevState.conY ) ) {     // newly-released downward
          TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
@@ -1536,22 +1527,14 @@ class Robot : public frc::TimedRobot {
          
       } else if (  ( sCurrState.conY < -0.5 ) &&  // else if console "joystick"
                   !( sPrevState.conY < -0.5 ) ) { // is newly-pressed upward
-         TSMotorState.targetVelocity_UnitsPer100ms =  2200 * 4096 / 600;
+         //TSMotorState.targetVelocity_UnitsPer100ms =  2200 * 4096 / 600;
+         //BSMotorState.targetVelocity_UnitsPer100ms = -3000 * 4096 / 600;
+         TSMotorState.targetVelocity_UnitsPer100ms =  2000 * 4096 / 600;
          BSMotorState.targetVelocity_UnitsPer100ms = -3000 * 4096 / 600;
          m_motorTopShooter.Set( ControlMode::Velocity, 
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
-         if ( !sCurrState.conButton[11] ) {
-            if ( ( TSMotorState.targetVelocity_UnitsPer100ms - 100 <
-	           m_motorTopShooter.GetSelectedSensorVelocity() )   &&
-                 ( BSMotorState.targetVelocity_UnitsPer100ms - 100 >
-	           m_motorBotShooter.GetSelectedSensorVelocity() )      )
-            {
-	       sCurrState.iConveyPercent = -30;
-               m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 ); 
-            }
-         }
       } else if ( !( sCurrState.conY < -0.5 ) &&
                    ( sPrevState.conY < -0.5 ) ) {     // newly-released upward
          TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
@@ -1564,25 +1547,12 @@ class Robot : public frc::TimedRobot {
                when console "joystick" is pushed in the positive direction ***/
       else if ( ( sCurrState.conX > 0.5 ) &&  //newly pressed rightward
                !( sPrevState.conX > 0.5 ) ) {
-         TSMotorState.targetVelocity_UnitsPer100ms =  600 * 4096 / 600;
-         TSMotorState.targetVelocity_UnitsPer100ms =  -1000 * 4096 / 600;
-         // BSMotorState.targetVelocity_UnitsPer100ms = -600 * 4096 / 600;
-         // BSMotorState.targetVelocity_UnitsPer100ms = -3000 * 4096 / 600;
-         BSMotorState.targetVelocity_UnitsPer100ms = -1000 * 4096 / 600;
+         TSMotorState.targetVelocity_UnitsPer100ms =   100 * 4096 / 600;
+         BSMotorState.targetVelocity_UnitsPer100ms = -4300 * 4096 / 600;
          m_motorTopShooter.Set( ControlMode::Velocity, 
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
-         if ( !sCurrState.conButton[11] ) {
-            if ( ( TSMotorState.targetVelocity_UnitsPer100ms + 100 >
-	           m_motorTopShooter.GetSelectedSensorVelocity() )   &&
-                 ( BSMotorState.targetVelocity_UnitsPer100ms + 100 >
-	           m_motorBotShooter.GetSelectedSensorVelocity() )      )
-            {
-	       sCurrState.iConveyPercent = -30;
-               m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 ); 
-            }
-         }
       } else if ( !( sCurrState.conX < 0.5 ) && //newly released rightward
                    ( sPrevState.conX < 0.5 ) ) {
          TSMotorState.targetVelocity_UnitsPer100ms = 0 * 4096 / 600;
@@ -1596,12 +1566,6 @@ class Robot : public frc::TimedRobot {
                                 TSMotorState.targetVelocity_UnitsPer100ms );
          m_motorBotShooter.Set( ControlMode::Velocity, 
                                 BSMotorState.targetVelocity_UnitsPer100ms );
-         if ( !sCurrState.conButton[11]  && 
-              ( (sCurrState.iTSMasterVelocity > 550) && 
-                (sCurrState.iBSMasterVelocity < -550) ) ) {
-	    sCurrState.iConveyPercent = -30;
-            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.3 );
-         }
       /***End of testing code***/
       } else if ( ( -0.5 < sCurrState.conY       ) && 
                   (        sCurrState.conY < 0.5 ) ) {
@@ -1611,8 +1575,11 @@ class Robot : public frc::TimedRobot {
                0.95 * (double)m_motorBotShooter.GetSelectedSensorVelocity() );
       } 
       if ( 0 == iCallCount%100 )  {   // every 2 seconds
-         MotorDisplay( "TS:", m_motorTopShooter, TSMotorState );
-         MotorDisplay( "BS:", m_motorBotShooter, BSMotorState );
+         if ( ( 100.0 < abs(m_motorTopShooter.GetSelectedSensorVelocity()) ) ||
+              ( 100.0 < abs(m_motorBotShooter.GetSelectedSensorVelocity()) ) ) {
+            MotorDisplay( "TS:", m_motorTopShooter, TSMotorState );
+            MotorDisplay( "BS:", m_motorBotShooter, BSMotorState );
+         }
       }
          
       return true;
@@ -1626,8 +1593,10 @@ class Robot : public frc::TimedRobot {
          /*------------------------------------------------------------------*/
    void Shoot( void ) {
       if ( 0.5 < sCurrState.conY ) {
+   	 // if ( ( 1800 * 4096 / 600 <
    	 if ( ( 1800 * 4096 / 600 <
                    abs( m_motorTopShooter.GetSelectedSensorVelocity() ) ) &&
+         //   ( 2600 * 4096 / 600 <
               ( 2600 * 4096 / 600 <
                    abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
 	                                 // run the conveyor to shoot the balls
@@ -1635,9 +1604,20 @@ class Robot : public frc::TimedRobot {
             m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
          }
       } else if (sCurrState.conY < -0.5) {
-         if ( ( 1900 * 4096 / 600 <
+         // if ( ( 1900 * 4096 / 600 <
+         if ( ( 1800 * 4096 / 600 <
                    abs( m_motorTopShooter.GetSelectedSensorVelocity() ) ) &&
-              ( 2700 * 4096 / 600 <
+         //   ( 2700 * 4096 / 600 <
+              ( 2800 * 4096 / 600 <
+                   abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
+	                                 // run the conveyor to shoot the balls
+	    sCurrState.iConveyPercent = -80;
+            m_motorConveyMaster.Set( ControlMode::PercentOutput, -0.8 );
+         }
+      } else if ( 0.5 < sCurrState.conX ) {
+         if ( ( 0 * 4096 / 600 <
+                   abs( m_motorTopShooter.GetSelectedSensorVelocity() ) ) &&
+              ( 4000 * 4096 / 600 <
                    abs( m_motorBotShooter.GetSelectedSensorVelocity() ) )   ) {
 	                                 // run the conveyor to shoot the balls
 	    sCurrState.iConveyPercent = -80;
@@ -2340,7 +2320,7 @@ class Robot : public frc::TimedRobot {
                              // the console switches.
       // mSeqIndex =  60;       // TEST: barrel
       // mSeqIndex =  80;       // TEST: slalom
-      mSeqIndex = 100;       // TEST: bounce
+      // mSeqIndex = 100;       // TEST: bounce  (works)
 
                              // Initialize yaw and distance, so next maneuvers
 			     // are relative to these current settings.
