@@ -90,7 +90,9 @@ class Robot : public frc::TimedRobot {
       M_TURN_LEFT      = 2,  // turn  left with a 12" radius to desired yaw
       M_TURN_RIGHT     = 3,  // turn right with a 12" radius to desired yaw
       M_ROTATE         = 4,  // rotate (in place) left or right to desired yaw
-      M_TERMINATE_SEQ  = 5 
+      M_SHIFT_LOW      = 5,  // shift into low gear
+      M_SHIFT_HIGH     = 6,  // shift into high gear
+      M_TERMINATE_SEQ  = 7 
    };
 
                  // create a struct which can contain a full maneuver
@@ -121,15 +123,15 @@ class Robot : public frc::TimedRobot {
      // index command             (feet)    positive left)  powercell?
      // ----- ----------------     ----     --------        -----
       // index 0: (ballgrabber)
-      {   0,  M_DRIVE_STRAIGHT,     5.0,       0.0,         false },
+      {   0,  M_DRIVE_STRAIGHT,     4.0,       0.0,         false },
       {   1,  M_TURN_RIGHT,         0.0,     -26.0,         false },
-      {   2,  M_DRIVE_STRAIGHT,     5.5,     -26.0,         true  },
+      {   2,  M_DRIVE_STRAIGHT,     7.5,     -30.0,         true  },
       {   3,  M_TURN_LEFT,          0.0,      70.0,         false },
-      {   4,  M_DRIVE_STRAIGHT,     4.5,      70.0,         true  },
+      {   4,  M_DRIVE_STRAIGHT,     8.0,      75.0,         true  },
       {   5,  M_ROTATE,             0.0,       0.0,         false },
-      {   6,  M_DRIVE_STRAIGHT,    11.0,       0.0,         false },
-      {   7,  M_STOP,               0.0,       0.0,         false },
-      {   8,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
+      {   6,  M_DRIVE_STRAIGHT,     1.0,       0.0,         false },
+      {   7,  M_DRIVE_STRAIGHT,     9.0,       0.0,         true  },
+      {   8,  M_STOP,               0.0,       0.0,         false },
       {   9,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
 
       // index 10:
@@ -190,14 +192,14 @@ class Robot : public frc::TimedRobot {
 
       // index 60: (barrel) (works)
       {  60,  M_STOP,               0.0,       0.0,         false },
-      {  61,  M_DRIVE_STRAIGHT,     4.5,       0.0,         false },
-      {  62,  M_DRIVE_STRAIGHT,     5.0,       0.0,         false },
-      {  63,  M_TURN_RIGHT,         0.0,    -335.0,         false },
-      {  64,  M_DRIVE_STRAIGHT,     8.0,    -340.0,         false },
-      {  65,  M_TURN_LEFT,          0.0,     -60.0,         false },
-      {  66,  M_DRIVE_STRAIGHT,     7.3,     -45.0,         false },
-      {  67,  M_TURN_LEFT,          0.0,     160.0,         false },
-      {  68,  M_DRIVE_STRAIGHT,    22.0,     180.0,         false },
+      {  61,  M_DRIVE_STRAIGHT,     8.5,       0.0,         false },
+      {  62,  M_TURN_RIGHT,         0.0,    -325.0,         true },
+      {  63,  M_DRIVE_STRAIGHT,     8.5,    -330.0,         false },
+      {  64,  M_TURN_LEFT,          0.0,     -68.0,         true }, // was -70
+      {  65,  M_DRIVE_STRAIGHT,     6.7,     -55.0,         false }, // was 7.3
+      {  66,  M_TURN_LEFT,          0.0,     148.0,         true },
+      {  67,  M_SHIFT_HIGH,         0.0,       0.0,         true },
+      {  68,  M_DRIVE_STRAIGHT,    22.0,     178.0,         false }, // was 180
       {  69,  M_STOP,               0.0,       0.0,         false },
       {  70,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
       {  71,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
@@ -210,21 +212,21 @@ class Robot : public frc::TimedRobot {
       {  78,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
       {  79,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
 
-      // index 80: (slalom) (untested)
+      // index 80: (slalom) (works)
       {  80,  M_STOP,               0.0,       0.0,         false },
-      {  81,  M_DRIVE_STRAIGHT,     2.0,       0.0,         false },
+      {  81,  M_DRIVE_STRAIGHT,     1.0,       0.0,         false },
       {  82,  M_TURN_LEFT,          0.0,      40.0,         false }, // was 45
-      {  83,  M_DRIVE_STRAIGHT,     2.0,      60.0,         false },
-      {  84,  M_TURN_RIGHT,         0.0,      20.0,         false },
-      {  85,  M_DRIVE_STRAIGHT,    11.0,       0.0,         false }, // was -5
-      {  86,  M_TURN_RIGHT,         0.0,     -30.0,         false }, // was -45
-      {  87,  M_DRIVE_STRAIGHT,     2.5,     -50.0,         false },
-      {  88,  M_TURN_LEFT,          0.0,     210.0,         false },
-      {  89,  M_DRIVE_STRAIGHT,     3.5,     230.0,         false },
-      {  90,  M_TURN_RIGHT,         0.0,     199.0,         false },
-      {  91,  M_DRIVE_STRAIGHT,    10.0,     184.0,         false },
+      {  83,  M_DRIVE_STRAIGHT,     1.5,      60.0,         false },
+      {  84,  M_TURN_RIGHT,         0.0,      15.0,         false },
+      {  85,  M_DRIVE_STRAIGHT,    10.0,       0.0,         false }, // was -5
+      {  86,  M_TURN_RIGHT,         0.0,     -40.0,         true  }, // was -45
+      {  87,  M_DRIVE_STRAIGHT,     2.2,     -50.0,         false },
+      {  88,  M_TURN_LEFT,          0.0,     215.0,         true  },
+      {  89,  M_DRIVE_STRAIGHT,     2.5,     230.0,         false },
+      {  90,  M_TURN_RIGHT,         0.0,     194.0,         false },
+      {  91,  M_DRIVE_STRAIGHT,     9.5,     184.0,         false },
       {  92,  M_TURN_RIGHT,         0.0,     140.0,         false },
-      {  93,  M_DRIVE_STRAIGHT,     5.5,     135.0,         false },
+      {  93,  M_DRIVE_STRAIGHT,     4.5,     135.0,         false },
       {  94,  M_STOP,               0.0,       0.0,         false },
       {  95,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
       {  96,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
@@ -235,24 +237,25 @@ class Robot : public frc::TimedRobot {
       // index 100: (bounce) (works)
       { 100,  M_STOP,               0.0,       0.0,         false },
       { 101,  M_STOP,               0.0,       0.0,         false },
-      { 102,  M_DRIVE_STRAIGHT,     2.0,       0.0,         false },
-      { 103,  M_TURN_LEFT,          0.0,      80.0,         false },
-      { 104,  M_DRIVE_STRAIGHT,     2.0,      90.0,         false },
-      { 105,  M_DRIVE_STRAIGHT,    -2.0,      90.0,         false },
-      { 106,  M_TURN_LEFT,         -1.0,     120.0,         false },
-      { 107,  M_DRIVE_STRAIGHT,    -6.0,     120.0,         false },
-      { 108,  M_TURN_LEFT,         -1.0,     180.0,         false },
+      { 102,  M_DRIVE_STRAIGHT,     1.2,       0.0,         false },
+      { 103,  M_TURN_LEFT,          0.0,      75.0,         true },
+      { 104,  M_DRIVE_STRAIGHT,     1.4,      90.0,         false },
+      { 105,  M_DRIVE_STRAIGHT,    -0.5,      90.0,         false },
+      { 106,  M_TURN_LEFT,         -1.0,     105.0,         true },
+      { 107,  M_DRIVE_STRAIGHT,    -5.5,     120.0,         false },
+      { 108,  M_TURN_LEFT,         -1.0,     165.0,         true },
       { 109,  M_DRIVE_STRAIGHT,    -0.5,     180.0,         false },
-      { 110,  M_TURN_LEFT,         -1.0,     260.0,         false },
-      { 111,  M_DRIVE_STRAIGHT,    -8.0,     270.0,         false },
-      { 112,  M_DRIVE_STRAIGHT,     7.0,     270.0,         false },
-      { 113,  M_TURN_LEFT,          1.0,     350.0,         false },
-      { 114,  M_DRIVE_STRAIGHT,     3.5,     360.0,         false },
-      { 115,  M_TURN_LEFT,          1.0,     430.0,         false },
-      { 116,  M_DRIVE_STRAIGHT,     7.0,     450.0,         false },
-      { 118,  M_TURN_LEFT,         -1.0,     480.0,         false },
-      { 119,  M_DRIVE_STRAIGHT,    -3.0,     490.0,         false },
-      { 120,  M_STOP,               0.0,       0.0,         false },
+      { 110,  M_TURN_LEFT,         -1.0,     255.0,         true },
+      { 111,  M_DRIVE_STRAIGHT,    -6.0,     270.0,         false },
+      { 112,  M_DRIVE_STRAIGHT,     6.0,     270.0,         false },
+      { 113,  M_TURN_LEFT,          1.0,     350.0,         true },
+      { 114,  M_DRIVE_STRAIGHT,     3.0,     360.0,         false },
+      { 115,  M_TURN_LEFT,          1.0,     430.0,         true },
+      { 116,  M_DRIVE_STRAIGHT,     6.0,     450.0,         false },
+      { 117,  M_TURN_LEFT,         -1.0,     470.0,         true },
+      { 118,  M_DRIVE_STRAIGHT,    -2.0,     490.0,         false },
+      { 119,  M_STOP,               0.0,       0.0,         false },
+      { 120,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
       { 121,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
       { 122,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
       { 123,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
@@ -262,8 +265,6 @@ class Robot : public frc::TimedRobot {
       { 127,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
       { 128,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
       { 129,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
-      { 130,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
-      { 131,  M_TERMINATE_SEQ,      0.0,       0.0,         false },
 
    };
 
@@ -381,7 +382,7 @@ class Robot : public frc::TimedRobot {
       // int     lowH = 14;       // Set Hue
       // int     lowH = 20;       // Set Hue
       // int     highH = 34;      // (orig: 30)  
-      int     lowH = 25;       // Set Hue
+      int     lowH = 30;       // Set Hue
       int     highH = 65;      // (orig: 30)  
 
       int     lowS = 0;        // Set Saturation (orig: 200)
@@ -438,8 +439,8 @@ class Robot : public frc::TimedRobot {
                                                     // of the detected circles
                               100,          // param1 (edge detector threshold)
                               84,  // p2: increase this to reduce false circles
-                              20,  // was 24           // minimum circle radius
-                              56 );  // was 64         // maximum circle radius
+                              24,  // was 20           // minimum circle radius
+                              64 );  // was 56         // maximum circle radius
                               // was: threshImg.rows / 4, 100, 50, 10, 800 );
 
             iBiggestCircleIndex = -1;     // init to an impossible index
@@ -996,7 +997,7 @@ class Robot : public frc::TimedRobot {
          m_shiftingSolenoid.Set( false );
       }
     } else {
-      if ( ( 15000 < abs(LSMotorState.sensorVmin) ) &&
+      if ( ( 15000 < abs(LSMotorState.sensorVmin) ) ||
            ( 15000 < abs(RSMotorState.sensorVmin) )    ) {
          if (!sCurrState.highGear){
             cout << "shifting to high" << endl; 
@@ -1335,7 +1336,7 @@ class Robot : public frc::TimedRobot {
                dDesiredSpeed = 1.0;                            // go full speed
             } else {
                    // Otherwise speed is proportional to distance still needed.
-               dDesiredSpeed = 0.2 +
+               dDesiredSpeed = 0.5 +
 		                  ( desiredDistance - dDistanceDriven ) / 10.0;
             }
          } else {                               // else we're driving backwards
@@ -1344,7 +1345,7 @@ class Robot : public frc::TimedRobot {
                dDesiredSpeed = -1.0;               // go full speed (backwards)
             } else {
                    // Otherwise speed is proportional to distance still needed.
-               dDesiredSpeed = -0.2 +
+               dDesiredSpeed = -0.5 +
                                   ( desiredDistance - dDistanceDriven ) / 10.0;
             }
          }
@@ -1386,18 +1387,18 @@ class Robot : public frc::TimedRobot {
                  // is very close to the robot (Y is large).
 
                                     // The speed should be between 0.1 and 0.3
-            dDesiredSpeed = std::min( (120.0 - powercellOnVideo.Y) / 800.0,
-			              0.1 );
-	    if ( 0.3 < dDesiredSpeed ) {
-               dDesiredSpeed = 0.3;
+            dDesiredSpeed = std::min( (120.0 - powercellOnVideo.Y) / 100.0,
+			              0.3 );
+	    if ( 0.5 < dDesiredSpeed ) {
+               dDesiredSpeed = 0.5;
             }
                                     // The turn should be between -0.5 and 0.5
             if        ( 5 <= powercellOnVideo.X ) {
                // dDesiredTurn = sqrt(powercellOnVideo.X/300.0) );
-               dDesiredTurn = std::min( (powercellOnVideo.X/300.0), 1.0 );
+               dDesiredTurn = std::min( (powercellOnVideo.X/600.0), 1.0 );
             } else if ( powercellOnVideo.X < -5 ) {
                // dDesiredTurn = -sqrt(-powercellOnVideo.X/300.0) );
-               dDesiredTurn = std::max( (-powercellOnVideo.X/300.0), -1.0 );
+               dDesiredTurn = std::max( (powercellOnVideo.X/600.0), -1.0 );
             } else {
                dDesiredTurn = 0.0;
             }
@@ -1405,10 +1406,16 @@ class Robot : public frc::TimedRobot {
 	 } else {         // else (we'd divert to a powercell if there was one,
                           // but no powercell is currently in view)
             // then just drive (don't change dDesiredxxx values)
+	    dDesiredSpeed = dDesiredSpeed/4;
+	    dDesiredTurn = dDesiredTurn/4;
 	 }
 
          Team4918Drive( dDesiredSpeed, dDesiredTurn );    // then just drive
-         bReturnValue = false;   // tell caller we are still driving
+	 if ( bDivertToPowercell && sCurrState.powercellInIntake ) {
+            bReturnValue = true;   // tell caller we are done
+	 } else{
+            bReturnValue = false;   // tell caller we are still driving
+	 }
          if ( 0 == iCallCount%100 ) {                        // Every 2 seconds
             cout << "D2D(): curYaw/desYaw desTurn: " <<
                     sCurrState.yawPitchRoll[0] << 
@@ -1924,9 +1931,15 @@ class Robot : public frc::TimedRobot {
 		// while we are turning.
          if ( -0.001 < mSeq.distance ) {   // if requested distance is positive
             // Team4918Drive( 0.3, -0.24 );   // turn left while driving forward
-            Team4918Drive( 0.5, -0.40 );   // turn left while driving forward
+            // Team4918Drive( 0.5, -0.40 );   // turn left while driving forward
+            // Team4918Drive( 0.55, -0.44 );   // too much
+            if ( mSeq.bDivertToPcell ) {
+               Team4918Drive( 0.5, -0.47 );   // turn left tightly
+            } else {
+               Team4918Drive( 0.5, -0.44 );   // turn left widely
+            }
 	 } else {                          // else
-            Team4918Drive( -0.3, -0.24 );  // turn left while driving backward
+            Team4918Drive( -0.5, -0.44 );   // turn left tightly
 	 }
                                   // A left turn increases the angle
                  		  // (like in trigonometry, not like a compass)
@@ -1945,9 +1958,16 @@ class Robot : public frc::TimedRobot {
 		// while we are turning.
          if ( -0.001 < mSeq.distance ) {   // if requested distance is positive
             // Team4918Drive( 0.3,  0.24 );   // turn right while driving forward
-            Team4918Drive( 0.5,  0.40 );   // turn right while driving forward
+            // Team4918Drive( 0.5,  0.40 );   // turn right while driving forward
+            // Team4918Drive( 0.5,  0.44 );   // turn right while driving forward
+            // Team4918Drive( 0.55,  0.44 );   // too much
+            if ( mSeq.bDivertToPcell ) {
+               Team4918Drive( 0.5,  0.47 );   // turn right tightly
+            } else {
+               Team4918Drive( 0.5,  0.44 );   // turn right widely
+            }
 	 } else {                          // else
-            Team4918Drive( -0.3,  0.24 );  // turn right while driving backward
+            Team4918Drive( -0.5,  0.44 );   // turn right tightly
 	 }
                                   // A right turn decreases the angle
                  		  // (like in trigonometry, not like a compass)
@@ -1970,6 +1990,18 @@ class Robot : public frc::TimedRobot {
             cout << "EM: Rotation completed, heading: ";
 	    cout << sCurrState.yawPitchRoll[0]  << endl;
 	 }
+         break;
+
+      case M_SHIFT_LOW:
+         bRetVal = true;                  // and exit this maneuver immediately
+         sCurrState.highGear = false;
+         m_shiftingSolenoid.Set( false );
+         break;
+
+      case M_SHIFT_HIGH:
+         bRetVal = true;                  // and exit this maneuver immediately
+         sCurrState.highGear = true;
+         m_shiftingSolenoid.Set( true );
          break;
 
       case M_TERMINATE_SEQ:
@@ -2294,9 +2326,9 @@ class Robot : public frc::TimedRobot {
 
                              // mSeqIndex can be set to different values,
                              // based on the console switches.
-      // mSeqIndex = 0;         // ballgrabber sequence (untested)
+      mSeqIndex = 0;         // ballgrabber sequence (untested)
       // mSeqIndex =  60;       // barrel sequence (works)
-      mSeqIndex =  80;       // slalom sequence (untested)
+      // mSeqIndex =  80;       // slalom sequence (works)
       // mSeqIndex = 100;       // bounce sequence (works)
 
                              // Initialize yaw and distance, so next maneuvers
@@ -2321,15 +2353,17 @@ class Robot : public frc::TimedRobot {
 
       //m_motorIntake.Set(ControlMode::PercentOutput, -0.4);
 
-      if ( sCurrState.conButton[8] )   {            // Run intake forward.
+//      if ( sCurrState.conButton[8] )   {            // Run intake forward.
          if (  sCurrState.powercellInIntake ) {       // if powercell in intake
             m_motorIntake.Set( ControlMode::PercentOutput, -0.1 ); // be gentle
 	 } else {
             m_motorIntake.Set( ControlMode::PercentOutput, -0.4 ); // be strong
 	 }
-      } else {                                         // Stop the intake.
-         m_motorIntake.Set( ControlMode::PercentOutput, 0.0 );
-      }
+//      } else {                                         // Stop the intake.
+//         m_motorIntake.Set( ControlMode::PercentOutput, 0.0 );
+//      }
+
+      RunConveyor();
 
       // m_drive.StopMotor();
       LSMotorState.targetVelocity_UnitsPer100ms = 0;        // Left Side drive
